@@ -17,14 +17,16 @@ class camera():
         c.y = 0;
         c.shakeTime = 0;
         c.shakeStr = 5;
-        c.smoothness = 5;
+        c.smoothness = 15;
         
 c = camera();
 
 tileImgs = [
     
-    "0",
-    pygame.image.load(path + "images\dirt.png").convert()
+    0, # eventually change that to be images/tiles.png, then figure out clipping images
+    pygame.image.load(path + "images\grass.png").convert(),
+    pygame.image.load(path + "images\dirt.png").convert(),
+    pygame.image.load(path + "images\stone.png").convert()
     
 ]
 
@@ -36,8 +38,18 @@ skyblue = pygame.Color("skyblue");
 
 chunks = {}
 chunkSize = 10;
+
 tileSize = tileImgs[1].get_width(); 
+
 totalChunkSize = chunkSize * tileSize;
+
+screenChunks = [1, 1];
+ # calculate how many chunks should be on screen (width, height)
+screenChunks[0] = math.floor(sW / totalChunkSize) + 3;
+screenChunks[1] = math.floor(sH / totalChunkSize) + 2;
+print(screenChunks);
+
+
 
 def genChunk (chunkX, chunkY, retur = False) :
     chunkData = {};
@@ -51,9 +63,11 @@ def genChunk (chunkX, chunkY, retur = False) :
             
              # tile type is air by default
             tileType = 0; # air
-            tileType = 1;
-            if tileY > 10:
-                tileType = 1; # dirt
+            
+            if tileY == 10: tileType = 1; # grass
+            if tileY > 10: tileType = 2; # dirt
+            if tileY > 20:
+                if random.randint(1, int(100 / tileY)) == 1: tileType = 3; # stone
                 
              # add tile to chunk's data
             chunkData[str(x) + ";" + str(y)] = [tileType];
@@ -64,7 +78,7 @@ def genChunk (chunkX, chunkY, retur = False) :
 class t():
     def __init__(t):
         t.x = 0;
-        t.y = 15;
+        t.y = 50;
         t.w = 8;
         t.h = t.w * 2;
         
@@ -124,15 +138,15 @@ def playerFrame (p) :
      # do camera
     c.x -= round((p.x+p.w/2 + c.x - sW/2) / c.smoothness);
     c.y -= round((p.y+p.h/2 + c.y - sH/2) / c.smoothness);
-
+    
     p.chunk = getChunkPos(p.x, p.y);
     p.tile = getTilePos(p.x, p.y);
     
-    if input[pygame.K_d]: p.x += 10;
-    if input[pygame.K_a]: p.x -= 10;
+    if keys[pygame.K_d]: p.x += 5;
+    if keys[pygame.K_a]: p.x -= 5;
     
-    if input[pygame.K_w]: p.y -= 10;
-    if input[pygame.K_s]: p.y += 10;
+    if keys[pygame.K_w]: p.y -= 5;
+    if keys[pygame.K_s]: p.y += 5;
 
     screen.blit(tileImgs[1], (p.x+c.x, p.y+c.y));
     
@@ -148,23 +162,24 @@ def renderTiles (chunkPos) :
     renderList = [];
     chunkPosList = [];
     
-    leftChunk = (chunkPos[0] - 1, chunkPos[1]);
-    midChunk = chunkPos;
-    rightChunk = (chunkPos[0] + 1, chunkPos[1]);
+    xOffset = math.floor(screenChunks[0]/2);
+    yOffset = math.floor(screenChunks[1]/2);
     
-    chunkPosList.append(leftChunk);
-    chunkPosList.append(midChunk);
-    chunkPosList.append(rightChunk);
-    
-    renderList.append(getChunk(leftChunk));
-    renderList.append(getChunk(midChunk));
-    renderList.append(getChunk(rightChunk));
+    for x in range(screenChunks[0]):
+        for y in range(screenChunks[1]):
+            
+            chunkX = chunkPos[0] + x - xOffset;
+            chunkY = chunkPos[1] + y - yOffset;
+            pos = (chunkX, chunkY);
+            
+            chunkPosList.append(pos);
+            renderList.append(getChunk(pos));
     
     currentChunk = 0;
     
     for chunk in renderList:
         for tilePos, tile in chunk.items():
-            if not tile[0] == 0 or True:
+            if not tile[0] == 0:
                 
                 xpos = int(tilePos[0]);
                 ypos = int(tilePos[2]);
@@ -189,24 +204,20 @@ def renderTiles (chunkPos) :
         currentChunk += 1;
               
                 
-    
-
-
-
-#for tilePos, tile in plr.chunk.items(): shows how to loop through chunks
-#    pass#print(tile[0]) # what's the tile type for each tile
-
-#try: this is how to handle exeptions easier
-#    print(chunks["4;4"])
-#except KeyError:
-#    print("???");
-
+                
+keys = pygame.key.get_pressed();
+playerFrame(plr);
+                
 running = True;
 while running: # game loop
 
     screen.fill(skyblue);
     
-    input = pygame.key.get_pressed();
+    keys = pygame.key.get_pressed();
+    
+    renderTiles(plr.chunk);
+    
+    
     
     playerFrame(plr);
     
@@ -216,7 +227,7 @@ while running: # game loop
     
     
     
-    renderTiles(plr.chunk);
+    
     
     
     
@@ -233,4 +244,4 @@ while running: # game loop
     clock.tick(fps);
     
 
-input()
+input() # stop game when it ends sometimes
