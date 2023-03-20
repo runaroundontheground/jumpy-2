@@ -64,8 +64,8 @@ def genChunk (chunkX, chunkY, retur = False) :
              # tile type is air by default
             tileType = 0; # air
             
-            if tileY == chunkSize + 1: tileType = 1; # grass
-            if tileY > chunkSize + 1: tileType = 2; # dirt
+            if tileY == chunkSize: tileType = 1; # grass
+            if tileY > chunkSize: tileType = 2; # dirt
             if tileY > chunkSize * 2:
                 if random.randint(1, int(100 / tileY)) == 1: tileType = 3; # stone
                 
@@ -87,7 +87,7 @@ class t(): # thing
         t.yv = 0;
         
         t.w = tileSize;
-        t.h = t.w# * 2;
+        t.h = t.w * 2;
         
         
 
@@ -106,10 +106,10 @@ def draw (img=tileImgs[1], x=0, y=0, static = False) :
     else: cameraX, cameraY = c.x, c.y;
     
     if type(x) == tuple:
-        pos = (x[0] + cameraX, x[1] + cameraY);
+        pos = (int(x[0] + cameraX), int(x[1] + cameraY));
         
     else:
-        pos = (x + cameraX, y + cameraY);
+        pos = (int(x + cameraX), int(y + cameraY));
     
     screen.blit(img, pos);
     
@@ -134,37 +134,41 @@ def getChunk (chunkPos, generate = True) :
         
             genChunk(int(chunkX), int(chunkY));
             
-            chunk = chunks[chunkX + ";" + chunkY];
-    else: chunk = chunks[chunkX + ";" + chunkY];
-        
+    chunk = chunks[chunkX + ";" + chunkY];
     
     return chunk;
+
+def getTilePos(chunkPos, x, y):
     
-def getTile (chunkPos, tilePos, otherInfo = False) :
     
-    if chunkPos[0] == chunkSize - 1:
-        chunkPos = (chunkPos[0] + 1, chunkPos[1]);
-        tilePos = (1, tilePos[1]);
-    if chunkPos[1] == chunkSize - 1:
-        chunkPos = (chunkPos[0], chunkPos[1] + 1);
-        tilePos = (tilePos[0], 1);
+    
+    x = math.floor(x/tileSize);
+    y = math.floor(y/tileSize);
+    
+    x *= tileSize;
+    y *= tileSize;
+    
+    return (x, y);
+    
+def getTile (x, y, otherInfo = False) :
+    
+    chunkPos = getChunkPos(x, y);
+    
+    chunkX = chunkPos[0];
+    chunkY = chunkPos[1];
     
     chunk = getChunk(chunkPos);
-     # CURRENTLY FIXING GETTING THE POSITION
-     # CAN'T ACCESS TILES IN A CHUNK NEARBY
-    tileX = str(math.floor(tilePos[0] / tileSize))[-1];
-    tileY = str(math.floor(tilePos[1] / tileSize))[-1];
     
+    x = math.floor(x/tileSize);
+    y = math.floor(y/tileSize);
+    
+    tileX = str(x)[-1];
+    tileY = str(y)[-1];
     
     tile = chunk[str(tileX) + ";" + str(tileY)];
-    data = False;
-    if otherInfo:
-        data = tile;
-    else:
-        if not tile[0] == 0:
-            data = True;
     
-    print(str(tileX) + ", " + str(tileY));
+    if otherInfo: data = tile;
+    else: data = tile[0];
     
     return data;
 
@@ -180,25 +184,33 @@ def playerFrame (p) :
         c.shakeTime -= 1;
         c.x += random.randint(0, c.shakeStr*2) - c.shakeStr;
         c.y += random.randint(0, c.shakeStr*2) - c.shakeStr;
-        
+    
+    p.px = p.x;
+    p.py = p.y;
+    
     p.x += p.xv;
     p.y += p.yv;
     
     
     p.chunkPos = getChunkPos(p.x, p.y);
     
-    tileBelow = getTile(p.chunkPos, (p.x, p.y + p.h));
+    p.tilePos = getTilePos(p.chunkPos, p.x, p.y);
     
+    tileBelow = getTile(p.x, p.y + p.h);
+    print(p.tilePos);
     
-    if tileBelow: draw(tileImgs[3], 100, 100, static = True);
-    
-    
-    
+    if tileBelow: 
+        draw(tileImgs[3], 100, 100, static = True);
+        p.yv = 0;
+        p.y = p.tilePos[1];
+    else:
+        p.yv += 0.1;
+        
     if keys[pygame.K_d]: p.x += 5;
     if keys[pygame.K_a]: p.x -= 5;
     
-    if keys[pygame.K_w]: p.y -= 5; #p.yv = -3;
-    if keys[pygame.K_s]: p.y += 5;
+    if keys[pygame.K_w] and tileBelow: p.yv = -3;
+  #  if keys[pygame.K_s]: p.y += 5;
     
    
 
