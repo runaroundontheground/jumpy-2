@@ -1,45 +1,54 @@
-import pygame, math, sys, random, os;
+import pygame, math, sys, random, os, time;
 pygame.init();
 
 
 
-sW, sH = 600, 400;
+sW, sH = 1200, 800; # normally 600, 400
 
 screen = pygame.display.set_mode((sW, sH));
-fps = 60;
 clock = pygame.time.Clock();
 path = os.path.dirname(os.path.realpath(__file__));
-path += "/";
 
-class camera():
-    def __init__(c):
-        c.x = 0;
-        c.y = 0;
-        c.shakeTime = 0;
-        c.shakeStr = 5;
-        c.smoothness = 15;
+FPS = 60;
+timeScale = 1.0;
+gravity = 0.1;
+
+class Camera():
+    def __init__(this):
+        this.realX = 0;
+        this.realY = 0;
+        this.x = 0;
+        this.y = 0;
+        this.shakeTime = 0;
+        this.shakeStrength = 5;
+        this.smoothness = 15;
         
-c = camera();
+camera = Camera();
 
 tileImgs = [
     
-    0, # eventually change that to be images/tiles.png, then figure out clipping images
-    pygame.image.load(path + "images\grass.png").convert(),
-    pygame.image.load(path + "images\dirt.png").convert(),
-    pygame.image.load(path + "images\stone.png").convert()
+    0, # eventually change that to be images/tiles.png, then figure out clipping images for a spritesheet
+    pygame.image.load(path + "\images\grass.png").convert(),
+    pygame.image.load(path + "\images\dirt.png").convert(),
+    pygame.image.load(path + "\images\stone.png").convert()
     
 ]
 
+tileSize = tileImgs[1].get_width(); 
 
-
-
+stickAnim = [
+    pygame.image.load(path+"/images/stick figure/run.png").convert() # 22 frame animation, best at 44 fps, * by .2
+]
+stickAnim[0].set_colorkey((255,255,255));
+stickAnim[0] = pygame.transform.scale(stickAnim[0], (stickAnim[0].get_width()*1, stickAnim[0].get_height()*1));
+print(stickAnim[0].get_height());
 skyblue = pygame.Color("skyblue");
 
 
 chunks = {}
 chunkSize = 10;
 
-tileSize = tileImgs[1].get_width(); 
+
 
 totalChunkSize = chunkSize * tileSize;
 
@@ -51,33 +60,42 @@ screenChunks[1] = math.floor(sH / totalChunkSize) + 2;
 
 
 
-def genChunk (chunkX, chunkY, retur = False) :
+def generateChunk (chunkX, chunkY) :
+
     chunkData = {};
     
     for x in range(chunkSize):
         for y in range(chunkSize):
             
-             # find real position for generation
+            
             tileX = chunkX * chunkSize + x;
             tileY = chunkY * chunkSize + y;
             
-             # tile type is air by default
-            tileType = 0; # air
             
+            
+            tileType = 0; # air
             if tileY == chunkSize: tileType = 1; # grass
             if tileY > chunkSize: tileType = 2; # dirt
             if tileY > chunkSize * 2:
                 if random.randint(1, int(100 / tileY)) == 1: tileType = 3; # stone
-                
-             # add tile to chunk's data
-            chunkData[str(x) + ";" + str(y)] = [tileType];
             
-     
-    if retur: return chunkData;
-    else: chunks[str(chunkX) + ";" + str(chunkY)] = chunkData;
+            
+            tileData = [tileType];
+            
+            chunkData[(x, y)] = tileData;
+            
+            
+            
+    
+    chunks[(chunkX, chunkY)] = chunkData;
     
     
-class t(): # thing
+    
+    
+    
+    
+    
+class Player (): # thing
     def __init__(t):
     
         t.x = 0;
@@ -94,24 +112,11 @@ class t(): # thing
  # pre-generate some chunks
 for x in range(10):
     for y in range(3):
-        genChunk(x, y);
+        generateChunk(x, y);
         
 
 
-def draw (img=tileImgs[1], x=0, y=0, static = False) :
-    
-    pos = 0;
-    
-    if static: cameraX, cameraY = 0, 0;
-    else: cameraX, cameraY = c.x, c.y;
-    
-    if type(x) == tuple:
-        pos = (int(x[0] + cameraX), int(x[1] + cameraY));
-        
-    else:
-        pos = (int(x + cameraX), int(y + cameraY));
-    
-    screen.blit(img, pos);
+
     
 def getChunkPos (x, y) :
     
@@ -120,27 +125,14 @@ def getChunkPos (x, y) :
     
     return (chunkX, chunkY);
 
-def getChunk (chunkPos, generate = True) :
+def testChunk (x, y) :
     
-    chunkX = str(chunkPos[0]);
-    chunkY = str(chunkPos[1]);
-    
-    if generate:
-        try:
-        
-            chunk = chunks[chunkX + ";" + chunkY];
-            
-        except:
-        
-            genChunk(int(chunkX), int(chunkY));
-            
-    chunk = chunks[chunkX + ";" + chunkY];
-    
-    return chunk;
+    try:
+        testVar = chunks[(x, y)];
+    except:
+        chunks[(x, y)] = generateChunk(x, y);
 
-def getTilePos(chunkPos, x, y):
-    
-    
+def getTilePos (x, y):
     
     x = math.floor(x/tileSize);
     y = math.floor(y/tileSize);
@@ -154,79 +146,94 @@ def getTile (x, y, otherInfo = False) :
     
     chunkPos = getChunkPos(x, y);
     
-    chunkX = chunkPos[0];
-    chunkY = chunkPos[1];
-    
-    chunk = getChunk(chunkPos);
+  #  chunk = getChunk(chunkPos[0], chunkPos[1]);
     
     x = math.floor(x/tileSize);
     y = math.floor(y/tileSize);
     
-    tileX = str(x)[-1];
-    tileY = str(y)[-1];
+    tileX = int(str(x)[-1]);
+    tileY = int(str(y)[-1]);
     
-    tile = chunk[str(tileX) + ";" + str(tileY)];
+    tile = chunks [ ( chunkPos[0], chunkPos[1] ) ] [ ( tileX, tileY ) ];
+    
+    data = tile[0];
     
     if otherInfo: data = tile;
-    else: data = tile[0];
+    
     
     return data;
 
-plr = t();
-plr.lastChunkPos = 0;
+player = Player();
+player.lastChunkPos = 0;
 
-def playerFrame (p) :
+def updateCamera () :
     
-     # do camera
-    c.x -= round((p.x+p.w/2 + c.x - sW/2) / c.smoothness);
-    c.y -= round((p.y+p.h/2 + c.y - sH/2) / c.smoothness);
-    if c.shakeTime > 0:
-        c.shakeTime -= 1;
-        c.x += random.randint(0, c.shakeStr*2) - c.shakeStr;
-        c.y += random.randint(0, c.shakeStr*2) - c.shakeStr;
+    mouseOffsetX = mousePos[0] - sW/2;
+    mouseOffsetY = mousePos[1] - sH/2;
     
-    p.px = p.x;
-    p.py = p.y;
+    camera.realX -= round((camera.realX - (player.x + player.w/2) + sW/2 - mouseOffsetX) / camera.smoothness);
+    camera.realY -= round((camera.realY - (player.y + player.h/2) + sH/2 - mouseOffsetY) / camera.smoothness);
     
-    p.x += p.xv;
-    p.y += p.yv;
+    if camera.shakeTime > 0:
+        camera.shakeTime -= 1;
+        camera.realX += random.randint(0, camera.shakeStrength*2) - camera.shakeStrength;
+        camera.realY += random.randint(0, camera.shakeStrength*2) - camera.shakeStrength;
+        
+    camera.x = round(camera.realX);
+    camera.y = round(camera.realY);
+
+
+
+def playerFrame () :
     
+     
+    updateCamera();
     
-    p.chunkPos = getChunkPos(p.x, p.y);
+    player.px = player.x;
+    player.py = player.y;
     
-    p.tilePos = getTilePos(p.chunkPos, p.x, p.y);
+    player.x += player.xv;
+    player.y += player.yv;
     
-    tileBelow = getTile(p.x, p.y + p.h);
-    print(p.tilePos);
+    player.chunkPos = getChunkPos(player.x, player.y);
+    
+    player.tilePos = getTilePos(player.x, player.y);
+    #REMOVE LATER!!!
+    screen.blit(stickAnim[0], (100, 200));
+    tileBelow = getTile(player.x, player.y + player.h);
+    
+    #print(player.tilePos);
     
     if tileBelow: 
-        draw(tileImgs[3], 100, 100, static = True);
-        p.yv = 0;
-        p.y = p.tilePos[1];
+        screen.blit(tileImgs[3], (100, 100)); # show if ground collided without print's lag
+        player.yv = 0;
+        player.y = player.tilePos[1];
+        player.yv += 0.1;
     else:
-        p.yv += 0.1;
-        
-    if keys[pygame.K_d]: p.x += 5;
-    if keys[pygame.K_a]: p.x -= 5;
+        player.yv += gravity;
+    if keys[pygame.K_d]: player.x += 5;
+    if keys[pygame.K_a]: player.x -= 5;
     
-    if keys[pygame.K_w] and tileBelow: p.yv = -3;
-  #  if keys[pygame.K_s]: p.y += 5;
+    if keys[pygame.K_w] and tileBelow: player.yv = -3;
+  #  if keys[pygame.K_s]: player.y += 5;
     
    
 
-    draw(tileImgs[1], (p.x, p.y));
+    screen.blit(tileImgs[1], (player.x-camera.x, player.y-camera.y));
     
-    if not p.lastChunkPos == p.chunkPos:
-        print(p.chunkPos);
-    p.lastChunkPos = p.chunkPos;
+    if not player.lastChunkPos == player.chunkPos:
+        print(player.chunkPos);
+    player.lastChunkPos = player.chunkPos;
     
+
 
 
 
 def renderTiles (chunkPos) :
     
-    renderList = [];
+    chunkList = [];
     chunkPosList = [];
+    renderList = [];
     
     xOffset = math.floor(screenChunks[0]/2);
     yOffset = math.floor(screenChunks[1]/2);
@@ -236,19 +243,21 @@ def renderTiles (chunkPos) :
             
             chunkX = chunkPos[0] + x - xOffset;
             chunkY = chunkPos[1] + y - yOffset;
-            pos = (chunkX, chunkY);
             
-            chunkPosList.append(pos);
-            renderList.append(getChunk(pos));
-    
+            chunkPosList.append((chunkX, chunkY));
+            try:
+                chunkList.append(chunks[(chunkX, chunkY)]);
+            except:
+                generateChunk(chunkX, chunkY);
+                chunkList.append(chunks[(chunkX, chunkY)]);
     currentChunk = 0;
     
-    for chunk in renderList:
+    for chunk in chunkList:
         for tilePos, tile in chunk.items():
             if not tile[0] == 0:
                 
                 xpos = int(tilePos[0]);
-                ypos = int(tilePos[2]);
+                ypos = int(tilePos[1]);
                 
                 x = xpos * chunkSize;
                 y = ypos * chunkSize;
@@ -266,13 +275,12 @@ def renderTiles (chunkPos) :
                 
                 
                 
-                draw(tileImgs[tile[0]], (x, y));
+                screen.blit(tileImgs[tile[0]], (x-camera.x, y-camera.y));
         currentChunk += 1;
               
                 
                 
-keys = pygame.key.get_pressed();
-playerFrame(plr);
+
                 
 running = True;
 while running: # game loop
@@ -280,18 +288,18 @@ while running: # game loop
     screen.fill(skyblue);
     
     keys = pygame.key.get_pressed();
-    
-    renderTiles(plr.chunkPos);
-    
-    
-    
-    playerFrame(plr);
+    mousePos = pygame.mouse.get_pos();
+   
     
     
     
+    playerFrame();
+    cameraChunk = getChunkPos(int(mousePos[0] + camera.x), int(mousePos[1] + camera.y));
+    
+    renderTiles(cameraChunk);
     
     
-    
+    print(str(cameraChunk[0]) + ", " + str(cameraChunk[1]));
     
     
     
@@ -307,7 +315,7 @@ while running: # game loop
 
 
     pygame.display.update();
-    clock.tick(fps);
+    clock.tick(FPS/timeScale);
     
 
 input() # stop game when it ends sometimes
