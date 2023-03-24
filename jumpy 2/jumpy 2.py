@@ -37,10 +37,10 @@ tileImgs = [
 tileSize = tileImgs[1].get_width(); 
 
 stickAnim = [
-    pygame.image.load(path+"/images/stick figure/run.png").convert() # 22 frame animation, best at 44 fps, * by .2
+    pygame.image.load(path+"/images/stick figure/run.png").convert_alpha() # 22 frame animation, best at 44 fps, * by .2
 ]
 stickAnim[0].set_colorkey((255,255,255));
-stickAnim[0] = pygame.transform.scale(stickAnim[0], (stickAnim[0].get_width()*1, stickAnim[0].get_height()*1));
+stickAnim[0] = pygame.transform.scale(stickAnim[0], (stickAnim[0].get_width()*.25, stickAnim[0].get_height()*.25));
 print(stickAnim[0].get_height());
 skyblue = pygame.Color("skyblue");
 
@@ -93,9 +93,15 @@ def generateChunk (chunkX, chunkY) :
     
     
     
-    
-    
-class Player (): # thing
+class Mouse:
+    def __init__(mouse):
+        
+        mouse.x = 0;
+        mouse.y = 0;
+        mouse.cameraX = 0;
+        mouse.cameraY = 0;
+mouse = Mouse();
+class Player ():
     def __init__(t):
     
         t.x = 0;
@@ -168,8 +174,8 @@ player.lastChunkPos = 0;
 
 def updateCamera () :
     
-    mouseOffsetX = mousePos[0] - sW/2;
-    mouseOffsetY = mousePos[1] - sH/2;
+    mouseOffsetX = mouse.x - sW/2;
+    mouseOffsetY = mouse.y - sH/2;
     
     camera.realX -= round((camera.realX - (player.x + player.w/2) + sW/2 - mouseOffsetX) / camera.smoothness);
     camera.realY -= round((camera.realY - (player.y + player.h/2) + sH/2 - mouseOffsetY) / camera.smoothness);
@@ -186,7 +192,7 @@ def updateCamera () :
 
 def playerFrame () :
     
-     
+    
     updateCamera();
     
     player.px = player.x;
@@ -198,9 +204,20 @@ def playerFrame () :
     player.chunkPos = getChunkPos(player.x, player.y);
     
     player.tilePos = getTilePos(player.x, player.y);
+    
+    tileBelow = getTile(player.x, player.y + player.h);
     #REMOVE LATER!!!
     screen.blit(stickAnim[0], (100, 200));
-    tileBelow = getTile(player.x, player.y + player.h);
+    
+    
+    testRect1 = pygame.Rect((sW/2, sH/2), (50, 50));
+    testRect1.x = camera.x - mouse.cameraX/2;
+    print(testRect1.x);
+    testRect2 = pygame.Rect((sW/2 - 2.5, sH/2 - 2.5), (5, 5));
+    
+    pygame.draw.rect(screen, (0, 255, 0), testRect1);
+    pygame.draw.rect(screen, (255, 0, 0), testRect2);
+    
     
     #print(player.tilePos);
     
@@ -288,18 +305,18 @@ while running: # game loop
     screen.fill(skyblue);
     
     keys = pygame.key.get_pressed();
-    mousePos = pygame.mouse.get_pos();
-   
+    temporaryPos = pygame.mouse.get_pos();
+    mouse.x, mouse.y = temporaryPos[0], temporaryPos[1];
     
     
     
     playerFrame();
-    cameraChunk = getChunkPos(int(mousePos[0] + camera.x), int(mousePos[1] + camera.y));
+    cameraChunk = getChunkPos(int(mouse.x + camera.x), int(mouse.y + camera.y));
     
     renderTiles(cameraChunk);
     
     
-    print(str(cameraChunk[0]) + ", " + str(cameraChunk[1]));
+    #print(str(cameraChunk[0]) + ", " + str(cameraChunk[1]));
     
     
     
