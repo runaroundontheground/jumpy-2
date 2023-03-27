@@ -224,7 +224,7 @@ def playerFrame () :
     screen.blit(stickAnim["run"][0], (100, 200));
     screen.blit(stickAnim["walk"][0], (100, 300));
     screen.blit(stickAnim["idle"][0], (100, 400));
-    screen.blit(stickAnim["crouch"][0], (500, 500));
+    #screen.blit(stickAnim["crouch"][0], (500, 500));
     print(1000/FPS);
     
     testRect1 = pygame.Rect((sW/2, sH/2), (50, 50));
