@@ -52,25 +52,59 @@ tryImageLoad();
     
 
 if useImage:
-    def transformImage (imageSource, animation, scale, frames) :
+    def transformImage (animation, scale, frames) :
     
-        width = imageSource[animation][0].get_width();
-        height = imageSource[animation][0].get_height();
-        imageSource[animation][0] = pygame.transform.scale(imageSource[animation][0], (width * scale, height * scale));
-        imageSource[animation][5] = imageSource[animation][0].get_width() / frames;
-        imageSource[animation][6] = imageSource[animation][0].get_height();
+        width = stickAnim[animation]["image"].get_width();
+        height = stickAnim[animation]["image"].get_height();
+        stickAnim[animation]["image"] = pygame.transform.scale(stickAnim[animation]["image"], (width * scale, height * scale));
+        stickAnim[animation]["width"] = stickAnim[animation]["image"].get_width() / stickAnim[animation]["lastFrame"];
+        stickAnim[animation]["height"] = stickAnim[animation]["image"].get_height();
 
     stickAnim = {
-        # items are: image, current frame, last frame, inbetween currect frame, inbetween last frame, width, height
-        "run": [pygame.image.load(path+"/images/stick figure/run.png").convert_alpha(), 0, 22, 0, 1, 11, 11],
-        # 22 frames, run at 22 - 44 fps, scale by 0.28
-        "walk": [pygame.image.load(path+"/images/stick figure/walk.png").convert_alpha(), 0, 16, 0, 1, 11, 11],
-        # 16 frames, run at 16 - 32 fps, scale by 0.255
-        "idle": [pygame.image.load(path+"/images/stick figure/idle.png").convert_alpha(), 0, 2, 0, FPS*2, 11, 11],
-        # 2 frames, run at 0.5 - 2 fps, scale by 0.255
-        #"crouch": [pygame.image.load(path+"/images/stick figure/crouch.png").convert_alpha(), 0, 0, 0, 0]
-        # single frame crouch animation, scale by 0.225
-        "slide": [pygame.image.load(path+"/images/stick figure/slide.png").convert_alpha(), 0, 0, 0, 0, 11, 11]
+        
+        "run": {
+            "image": pygame.image.load(path+"/images/stick figure/run.png").convert_alpha(),
+            "currentFrame": 0,
+            "lastFrame": 22, 
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1, # this isn't assigned until later
+            "height": 1, # this isn't assigned until later
+            "singleFrame": False
+            },
+        
+        "walk": {
+            "image": pygame.image.load(path+"/images/stick figure/walk.png").convert_alpha(),
+            "currentFrame": 0, 
+            "lastFrame": 16, 
+            "currentMidFrame": 0, 
+            "lastMidFrame": 1, 
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+            },
+        
+        "idle": {
+            "image": pygame.image.load(path+"/images/stick figure/idle.png").convert_alpha(), 
+            "currentFrame": 0, 
+            "lastFrame": 2, 
+            "currentMidFrame": 0, 
+            "lastMidFrame": FPS*2, 
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+            },
+        
+        "slide (in)": {
+            "image": pygame.image.load(path+"/images/stick figure/slide.png").convert_alpha(),
+            "currentFrame": 0,
+            "lastFrame": 8, 
+            "currentMidFrame": 0, 
+            "lastMidFrame": 0,
+            "width": 1,
+            "height": 1, 
+            "singleFrame": False
+            }
 
     }
 
@@ -83,10 +117,10 @@ if useImage:
     
     ]
 
-    transformImage(stickAnim, "run",  0.28, 22);
-    transformImage(stickAnim, "walk", 0.255, 16);
-    transformImage(stickAnim, "idle", 0.255, 2);
-    transformImage(stickAnim, "slide", 0.255, 1);
+    transformImage("run",  0.28, 22);
+    transformImage("walk", 0.255, 16);
+    transformImage("idle", 0.255, 2);
+    transformImage("slide (in)", 0.255, 1);
     #transformImage(stickAnim, "crouch", 0.255);
 
 else:
@@ -375,17 +409,39 @@ def playerFrame () :
         player.height = player.width;
     else: player.height = player.width * 2;
 
+    def updateAnimation(anim):
+        if not anim["singleFrame"]:
+            
+                if anim["currentMidFrame"] < anim["lastMidFrame"]:
+                    
+                    anim["currentMidFrame"] += 1;
+                else:
+                    
+                    anim["currentMidFrame"] = 0;
+                    anim["currentFrame"] += 1;
+                    
+                    if anim["currentFrame"] == anim["lastFrame"]:
+                        anim["currentFrame"] = 0;
+                
+                if not player.xv == 0:
+                    if player.anim == "walk":
+                        anim["lastMidFrame"] = math.ceil(3 / abs(player.xv));
+                    if player.anim == "run":
+                        if abs(player.xv) < player.maxXV: anim["lastMidFrame"] = math.floor(player.maxXV*3 / abs(player.xv));
+                        else: anim["lastMidFrame"] = 0;
+                
 
-    
+                player.image[player.anim] = anim;
+                
     def animate () :
         if useImage:
             anim = player.image[player.anim];
-            animRect = pygame.Rect(anim[1] * anim[5], 0, anim[5], anim[6]);
+            animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
             num = 0;
             if player.anim == "run" and player.xv > 0: num = -25;
 
 
-            image = anim[0];
+            image = anim["image"];
 
             image = pygame.Surface.subsurface(image, animRect);
 
@@ -393,6 +449,7 @@ def playerFrame () :
                 image = pygame.transform.flip(image, True, False);
             
             tilt = -player.xv / 2;
+            
             if player.flipH: tilt -= player.yv;
             else: tilt += player.yv;
             
@@ -401,25 +458,8 @@ def playerFrame () :
 
             screen.blit(image, (player.x-camera.x+num, player.y-camera.y+3));
             
-            if not anim[2] == 0:
+            updateAnimation(anim);
             
-                if anim[3] < anim[4]:
-                    anim[3] += 1;
-                else:
-                    anim[3] = 0;
-                    anim[1] += 1;
-                    if anim[1] == anim[2]:
-                        anim[1] = 0;
-                
-                if player.anim == "walk":
-                    if not player.xv == 0: anim[4] = math.ceil(3 / abs(player.xv));
-                    else: anim[4] = 0;
-                if player.anim == "run":
-                    if not player.xv == 0: anim[4] = math.floor(player.maxXV / abs(player.xv));
-                    else: anim[4] = 0;
-                
-
-                player.image[player.anim] = anim;
         
         else:
             player.image[player.anim][0].x = int(player.x) - camera.x;
@@ -434,7 +474,7 @@ def playerFrame () :
     player.lastChunkPos = player.chunkPos;
     
 
-#Player Movement Things
+
 
 
 
