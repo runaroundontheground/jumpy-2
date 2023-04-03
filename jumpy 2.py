@@ -4,30 +4,42 @@ pygame.init();
 sW, sH = 1200, 800; # normally 600, 400
 
 screen = pygame.display.set_mode((sW, sH));
+screenRect = pygame.Rect(0, 0, sW, sH);
 clock = pygame.time.Clock();
 path = os.path.dirname(os.path.realpath(__file__));
-
+path += "/";
 useImage = True;
 try:
-    test = path + "/animations";
+    test = path + "animations";
 except:
     useImage = False;
     
 FPS = 60;
 timeScale = 1.0;
+
 gravity = 0.1;
+placeBlock = False;
+
 
 class Camera():
     def __init__(this):
+        
         this.realX = 0;
         this.realY = 0;
+        
         this.x = 0;
         this.y = 0;
+        
         this.shakeTime = 0;
         this.shakeStrength = 5;
+        
         this.smoothness = 15;
+        
         this.offsetX = 0;
         this.offsetY = 0;
+        
+        this.px = 0;
+        this.py = 0;
         
 camera = Camera();
 
@@ -38,34 +50,27 @@ gray = pygame.Color("gray");
 
 
 tileSize = 30;
-
-
-def tryImageLoad (filePath="/images") :
-    global useImage;
-    try: 
-        pygame.image.load(path + "/images/stick figure/run.png");
-    except:
-        useImage = False;
-print(useImage)
-tryImageLoad();
-
+screenRect.x = -tileSize;
+screenRect.y = -tileSize;
+screenRect.width += tileSize;
+screenRect.height += tileSize;
     
 
 if useImage:
-    def transformImage (animation, scale, frames) :
+    def transformImage (animation, scale) :
     
         width = stickAnim[animation]["image"].get_width();
         height = stickAnim[animation]["image"].get_height();
         stickAnim[animation]["image"] = pygame.transform.scale(stickAnim[animation]["image"], (width * scale, height * scale));
-        stickAnim[animation]["width"] = stickAnim[animation]["image"].get_width() / stickAnim[animation]["lastFrame"];
+        stickAnim[animation]["width"] = stickAnim[animation]["image"].get_width() / stickAnim[animation]["frames"];
         stickAnim[animation]["height"] = stickAnim[animation]["image"].get_height();
 
     stickAnim = {
         
         "run": {
-            "image": pygame.image.load(path+"/images/stick figure/run.png").convert_alpha(),
+            "image": pygame.image.load(path + "images/stick figure/run.png").convert_alpha(),
             "currentFrame": 0,
-            "lastFrame": 22, 
+            "frames": 22, 
             "currentMidFrame": 0,
             "lastMidFrame": 1,
             "width": 1, # this isn't assigned until later
@@ -74,9 +79,9 @@ if useImage:
             },
         
         "walk": {
-            "image": pygame.image.load(path+"/images/stick figure/walk.png").convert_alpha(),
+            "image": pygame.image.load(path + "images/stick figure/walk.png").convert_alpha(),
             "currentFrame": 0, 
-            "lastFrame": 16, 
+            "frames": 16, 
             "currentMidFrame": 0, 
             "lastMidFrame": 1, 
             "width": 1,
@@ -85,9 +90,9 @@ if useImage:
             },
         
         "idle": {
-            "image": pygame.image.load(path+"/images/stick figure/idle.png").convert_alpha(), 
+            "image": pygame.image.load(path + "images/stick figure/idle.png").convert_alpha(), 
             "currentFrame": 0, 
-            "lastFrame": 2, 
+            "frames": 2, 
             "currentMidFrame": 0, 
             "lastMidFrame": FPS*2, 
             "width": 1,
@@ -96,15 +101,37 @@ if useImage:
             },
         
         "slide (in)": {
-            "image": pygame.image.load(path+"/images/stick figure/slide.png").convert_alpha(),
+            "image": pygame.image.load(path + "images/stick figure/slide (in).png").convert_alpha(),
             "currentFrame": 0,
-            "lastFrame": 8, 
+            "frames": 8, 
             "currentMidFrame": 0, 
-            "lastMidFrame": 0,
+            "lastMidFrame": 1,
             "width": 1,
             "height": 1, 
             "singleFrame": False
-            }
+            },
+        
+        "slide (mid)": {
+            "image": pygame.image.load(path + "images/stick figure/slide (mid).png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 3,
+            "currentMidFrame": 0,
+            "lastMidFrame": 0,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+           }
+        
+    #    "slide (out)": {
+    #        "image": pygame.image.load(path + "images/stick figure/slide (out).png").convert_alpha(),
+    #        "currentFrame": 0,
+    #        "frames": 8,
+    #        "currentMidFrame": 0,
+    #        "lastMidFrame": 1,
+    #        "width": 1,
+    #        "height": 1,
+    #        "singleFrame": False
+    #    } 
 
     }
 
@@ -117,11 +144,12 @@ if useImage:
     
     ]
 
-    transformImage("run",  0.28, 22);
-    transformImage("walk", 0.255, 16);
-    transformImage("idle", 0.255, 2);
-    transformImage("slide (in)", 0.255, 1);
-    #transformImage(stickAnim, "crouch", 0.255);
+    transformImage("run",  0.28);
+    transformImage("walk", 0.255);
+    transformImage("idle", 0.255);
+    transformImage("slide (in)", 0.255);
+    transformImage("slide (mid)", 0.255);
+    
 
 else:
     
@@ -183,7 +211,8 @@ def generateChunk (chunkX, chunkY) :
             if tileY > chunkSize: tileType = 2; # dirt
             if tileY > chunkSize * 2:
                 if random.randint(1, int(100 / tileY)) == 1: tileType = 3; # stone
-            
+             # small chance for floating blocks
+            if random.randint(1, 1000) == 1 and tileY < chunkSize: tileType = random.randint(1, 3);
             
             tileData = [tileType];
             
@@ -211,7 +240,12 @@ class Mouse:
 
 mouse = Mouse();
 
-
+class Tiles (): # this is here to make literally one thing work
+    def __init__ (this):
+        this.right = False;
+        this.left = False;
+        this.top = False;
+        this.bottom = False;
 
 class Player ():
     def __init__(this):
@@ -222,14 +256,17 @@ class Player ():
         this.xv = 0;
         this.yv = 0;
 
-        this.jumpPower = -3;
-        this.maxXV = 8;
+        this.rect = pygame.Rect(0, 0, 0, 0);
+        
+        this.jumpPower = -3; # normal -3
+        this.maxXV = 8; # normal 8
         this.maxYV = 300;
 
         this.lastChunkPos = 0;
+        this.tiles = Tiles();
 
-        this.accel = 0.3;
-        this.friction = 15;
+        this.accel = 0.3; # normal 0.3
+        this.friction = 15; # normal 15
 
         this.angle = 0;
         
@@ -237,8 +274,8 @@ class Player ():
         this.height = this.width * 2;
         this.flipH = False;
 
-        this.animFrame = 0;
-        this.anim = "run";
+        this.anim = "idle";
+        this.state = "idle";
 
         this.image = stickAnim;
         
@@ -263,39 +300,56 @@ def getChunkPos (x, y) :
 def testChunk (x, y) :
     
     try:
-        testVar = chunks[(x, y)];
+        chunks[(x, y)];
     except:
         chunks[(x, y)] = generateChunk(x, y);
 
-def getTilePos (x, y):
+def getTilePos (x, y, withinChunk = False):
     
     x = math.floor(x/tileSize);
     y = math.floor(y/tileSize);
     
-    x *= tileSize;
-    y *= tileSize;
+    if not withinChunk:
+        x *= tileSize;
+        y *= tileSize;
+    else:
+        if x > 0: 
+            while x >= chunkSize: x -= chunkSize;
+        if y > 0: 
+            while y >= chunkSize: y -= chunkSize;
+        if x < 0:
+            while x < 0: x += chunkSize;
+        if y < 0:
+            while y < 0: y += chunkSize;
     
     return (x, y);
     
 def getTile (x, y, otherInfo = False) :
     
-    chunkPos = getChunkPos(x, y);
-    
-  #  chunk = getChunk(chunkPos[0], chunkPos[1]);
+    chunk = getChunkPos(x, y);
     
     x = math.floor(x/tileSize);
     y = math.floor(y/tileSize);
     
+    if x < 0: 
+        while x < 0: x += chunkSize;
+    if y < 0:
+        while y < 0: y += chunkSize;
+    if x > chunkSize:
+        while x > chunkSize: x -= chunkSize;
+    if y > chunkSize: 
+        while y > chunkSize: y -= chunkSize;
+        
     tileX = int(str(x)[-1]);
     tileY = int(str(y)[-1]);
     
     try:
-        tile = chunks [ ( chunkPos[0], chunkPos[1] ) ] [ ( tileX, tileY ) ];
+        chunks [chunk] [ ( tileX, tileY ) ];
     except:
-        generateChunk(chunkPos[0], chunkPos[1])
-        tile = chunks [ ( chunkPos[0], chunkPos[1] ) ] [ ( tileX, tileY ) ];
+        generateChunk(chunkPos[0], chunkPos[1]);
+        tile = chunks [chunk] [ ( tileX, tileY ) ];
     else:
-        tile = chunks [ ( chunkPos[0], chunkPos[1] ) ] [ ( tileX, tileY ) ];
+        tile = chunks [chunk] [ ( tileX, tileY ) ];
         
     data = tile[0];
     
@@ -306,19 +360,21 @@ def getTile (x, y, otherInfo = False) :
 
 player = Player();
 
-
 def updateCamera () :
     
     camera.offsetX = mouse.absX - sW/2;
     camera.offsetY = mouse.absY - sH/2;
+    
+    camera.px = camera.realX;
+    camera.py = camera.realY;
     
     camera.realX -= round((camera.realX - (player.x + player.width/2) + sW/2 - camera.offsetX) / camera.smoothness);
     camera.realY -= round((camera.realY - (player.y + player.height/2) + sH/2 - camera.offsetY) / camera.smoothness);
     
     if camera.shakeTime > 0:
         camera.shakeTime -= 1;
-        camera.realX += random.randint(0, camera.shakeStrength*2) - camera.shakeStrength;
-        camera.realY += random.randint(0, camera.shakeStrength*2) - camera.shakeStrength;
+        camera.realX += random.randint(0, int(camera.shakeStrength*2)) - camera.shakeStrength;
+        camera.realY += random.randint(0, int(camera.shakeStrength*2)) - camera.shakeStrength;
         
     camera.x = round(camera.realX);
     camera.y = round(camera.realY);
@@ -326,120 +382,173 @@ def updateCamera () :
 
  # nav player
 def playerFrame () :
+    global timeScale
     
+    def updatePos():
+        global timeScale
+        player.px = player.x;
+        player.py = player.y;
+        
+        player.x += player.xv * timeScale; player.rect.x = int(player.x);
+        player.y += player.yv * timeScale; player.rect.y = int(player.y);
+        
+        player.rect.width = int(player.width);
+        player.rect.height = int(player.height);
+    updatePos();
+    def findChunksAndTiles():
+        playerMiddle = player.x + player.width / 2;
+        playerRight = player.x + player.width + 3;
+        playerLeft = player.x - 3;
     
-    updateCamera();
+        player.chunkPos = getChunkPos(playerMiddle, player.y);
     
-    player.px = player.x;
-    player.py = player.y;
+        player.tilePos = getTilePos(playerMiddle, player.y);
     
-    player.x += player.xv;
-    player.y += player.yv;
+        player.tiles.bottom = getTile(playerMiddle, player.y + player.height);
+        player.tiles.top = getTile(playerMiddle, player.y - tileSize);
+        
+        player.tiles.left = getTile(playerLeft, player.y);
+        player.tiles.right = getTile(playerRight, player.y);
+        
+        if not player.state == "slide":
+            if getTile(player.x - 1, player.y + tileSize): player.tiles.left = True;
+            if getTile(playerRight + 1, player.y + tileSize): player.tiles.right = True;
+    findChunksAndTiles();
     
-    player.chunkPos = getChunkPos(player.x, player.y);
-    
-    player.tilePos = getTilePos(player.x, player.y);
-    
-    tileBelow = getTile(player.x, player.y + player.height);
-  
-    tileBottomRight = getTile(player.x + 1, player.y + 2);
-   
     left = keys[pygame.K_a];
     right = keys[pygame.K_d];
     up = keys[pygame.K_SPACE];
     down = keys[pygame.K_s];
     
-
+    player.state = player.anim;
+    if player.state == "slide (in)" or player.state == "slide (mid)" or player.state == "slide (out)":
+        player.state = "slide";
     
-
-    if down:
-        if tileBelow:
-            if abs(player.xv) > player.maxXV / 2:
-                player.anim = "slide";
-            if player.anim == "slide":
-                pass
+    if player.xv > 0 and player.tiles.right:
+        player.xv = 0;
+        player.x = player.tilePos[0];
     
-    if tileBelow: 
+    if player.xv < 0 and player.tiles.left:
+        player.xv = 0;
+        player.x = player.tilePos[0];
+    
+    if player.tiles.bottom: 
         if useImage: screen.blit(tileImgs[3], (100, 100)); # show if ground collided without print's lag
         player.yv = 0;
         player.y = player.tilePos[1];
     else:
-        player.yv += gravity;
+        player.yv += gravity * timeScale;
         
         
-    if not player.anim == "slide":
+    if not player.state == "slide":
+        
+        accel = player.accel * timeScale;
+        
+        
         if right: 
-            if player.xv < player.maxXV: player.xv += player.accel;
+            if player.xv < player.maxXV: player.xv += accel;
         if left: 
-            if player.xv > -player.maxXV: player.xv -= player.accel;
+            if player.xv > -player.maxXV: player.xv -= accel;
         
-        if up and tileBelow:
-            if not player.anim == "slide": player.yv = player.jumpPower;
-
-    if player.xv == 0:
-        if tileBelow:
-            player.anim = "idle";
+        if player.tiles.bottom:
+            if up and not down: player.yv = player.jumpPower;
+            if player.xv == 0: player.anim = "idle";
+            elif abs(player.xv) > player.maxXV / 2: 
+                    player.anim = "run";
+            else: player.anim = "walk";
     
-    if not player.xv == 0 and not player.anim == "slide":
-        if tileBelow:
-            if abs(player.xv) < player.maxXV / 1.5:
-                player.anim = "walk";
-            else:
-                player.anim = "run";
-    
-    
+    if down:
+        if player.tiles.bottom:
+            if abs(player.xv) > player.maxXV / 2 and not player.state == "slide":
+                player.anim = "slide (in)";
+                player.state = "slide";
+                player.y += player.width;
+                player.height = player.width;
 
-
-    if (not left and not right) or (left and right) or player.anim == "slide":
+    if (not left and not right) or (left and right) or player.state == "slide":
          # friction
-        
-        player.xv -= player.xv / player.friction;
+        friction = player.friction;
+        if player.state == "slide": friction *= 5;
+        player.xv -= player.xv / friction;
         if player.xv > -0.1 and player.xv < 0.1:
             player.xv = 0;
 
 
-    if player.xv > 0:
-        player.flipH = False;
-    
-    if player.xv < 0:
-        player.flipH = True;
+    if player.xv > 0: player.flipH = False;
+    elif player.xv < 0: player.flipH = True;
 
   
-    if player.anim == "slide":
-        player.height = player.width;
-    else: player.height = player.width * 2;
+    if player.state == "slide":
+            if not down:
+                if abs(player.xv) < player.maxXV / 2:
+                    if not player.tiles.top:
+                        player.anim = "idle";
+                        player.y -= player.width;
+                        player.height = player.width * 2;
+                    else:
+                        player.anim = "crouch";
 
-    def updateAnimation(anim):
+    def playerDebug () :
+        global placeBlock, timeScale;
+        bkRect = player.rect;
+    
+        player.rect.x -= camera.x;
+        player.rect.y -= camera.y;
+    
+        pygame.draw.rect(screen, green, player.rect);
+    
+        player.rect = bkRect;
+        
+        if keys[pygame.K_b]:
+            placeBlock = True;
+        if keys[pygame.K_e]: timeScale = 0.5;
+        if keys[pygame.K_q]: timeScale = 1.0;
+        
+                
+        
+        
+    
+    playerDebug();
+    
+    anim = player.image[player.anim];
+    
+    def updateAnimation():
         if not anim["singleFrame"]:
             
-                if anim["currentMidFrame"] < anim["lastMidFrame"]:
-                    
-                    anim["currentMidFrame"] += 1;
-                else:
-                    
-                    anim["currentMidFrame"] = 0;
-                    anim["currentFrame"] += 1;
-                    
-                    if anim["currentFrame"] == anim["lastFrame"]:
-                        anim["currentFrame"] = 0;
+            if anim["currentMidFrame"] < anim["lastMidFrame"]:
                 
-                if not player.xv == 0:
-                    if player.anim == "walk":
-                        anim["lastMidFrame"] = math.ceil(3 / abs(player.xv));
-                    if player.anim == "run":
-                        if abs(player.xv) < player.maxXV: anim["lastMidFrame"] = math.floor(player.maxXV*3 / abs(player.xv));
-                        else: anim["lastMidFrame"] = 0;
+                anim["currentMidFrame"] += 1;
+            else:
                 
-
-                player.image[player.anim] = anim;
+                anim["currentMidFrame"] = 0;
+                anim["currentFrame"] += 1;
+                
+                if anim["currentFrame"] == anim["frames"]:
+                    anim["currentFrame"] = 0;
+                    if player.state == "slide":
+                        if player.anim == "slide (in)":
+                            player.anim = "slide (mid)";
+            
+            if not player.xv == 0:
+                if player.anim == "walk":
+                    anim["lastMidFrame"] = math.ceil(player.maxXV / 2 / abs(player.xv));
+                if player.anim == "run":
+                    if abs(player.xv) < player.maxXV: anim["lastMidFrame"] = math.floor(player.maxXV / abs(player.xv));
+                    else: anim["lastMidFrame"] = 0;
+            
                 
     def animate () :
         if useImage:
-            anim = player.image[player.anim];
+            
             animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
-            num = 0;
-            if player.anim == "run" and player.xv > 0: num = -25;
-
+            num = 7;
+            num2 = 0;
+            if player.anim == "run":
+                if player.xv > 0: num = -15;
+                else: num = -2;
+            if player.state == "slide":
+                num2 = -tileSize + 3;
+                num = -tileSize/2;
 
             image = anim["image"];
 
@@ -456,9 +565,9 @@ def playerFrame () :
             image = pygame.transform.rotate(image, player.angle + tilt);
             
 
-            screen.blit(image, (player.x-camera.x+num, player.y-camera.y+3));
+            screen.blit(image, (player.x-camera.x+num, player.y-camera.y+3+num2));
             
-            updateAnimation(anim);
+            updateAnimation();
             
         
         else:
@@ -467,7 +576,8 @@ def playerFrame () :
             pygame.draw.rect(screen, gray, player.image[player.anim][0]);
     
     animate();
-
+    
+    
     
     if not player.lastChunkPos == player.chunkPos:
         print(player.chunkPos);
@@ -484,20 +594,19 @@ def renderTiles (chunkPos) :
     chunkPosList = [];
     currentChunk = 0;
     
-    for x in range(screenChunks[0]):
+    for x in range(screenChunks[0] + 4):
         for y in range(screenChunks[1]):
             
-            chunkX = chunkPos[0] + x;
+            chunkX = chunkPos[0] + x - 2;
             chunkY = chunkPos[1] + y;
             
             chunkPosList.append((chunkX, chunkY));
+            
             try:
                 chunkList.append(chunks[(chunkX, chunkY)]);
             except:
                 generateChunk(chunkX, chunkY);
                 chunkList.append(chunks[(chunkX, chunkY)]);
-           # else:
-           #     chunkList.append(chunks[(chunkX, chunkY)]);
 
     
     
@@ -522,13 +631,18 @@ def renderTiles (chunkPos) :
                 x += xpos * (tileSize - chunkSize);
                 y += ypos * (tileSize - chunkSize);
                 
+                renderX = x - camera.x;
+                renderY = y - camera.y;
                 
+                if screenRect.collidepoint(renderX, renderY):
                 
-                if useImage: screen.blit(tileImgs[tile[0]], (x-camera.x, y-camera.y));
-                else: 
-                    tileImgs[tile[0]][0].x = x - camera.x;
-                    tileImgs[tile[0]][0].y = y - camera.y;
-                    pygame.draw.rect(screen, tileImgs[tile[0]][1], tileImgs[tile[0]][0]);
+                    if useImage: 
+                        screen.blit(tileImgs[tile[0]], (renderX, renderY));
+                    else: 
+                        tileImgs[tile[0]][0].x = renderX;
+                        tileImgs[tile[0]][0].y = renderY;
+                        pygame.draw.rect(screen, tileImgs[tile[0]][1], tileImgs[tile[0]][0]);
+                        
         currentChunk += 1;
               
                 
@@ -540,26 +654,25 @@ while running: # game loop
     screen.fill(skyblue);
     
     keys = pygame.key.get_pressed();
+    
     mousePos = pygame.mouse.get_pos();
     mouse.absX, mouse.absY = mousePos[0], mousePos[1];
-    mouse.x, mouse.y = mouse.absX + camera.x, mouse.absY + camera.y;
     
+    mouse.x = mouse.absX + camera.x;
+    mouse.y = mouse.absY + camera.y;
     
-    
-    playerFrame();
-
     cameraChunk = getChunkPos(int(player.x - sW/2 + camera.offsetX), int(player.y - sH/2 + camera.offsetY));
-    # player.x - sW/2 + camera.offsetX
     
     renderTiles(cameraChunk);
-    
-    
-    #print(str(cameraChunk[0]) + ", " + str(cameraChunk[1]));
-    
-    
+    playerFrame();
+
     
     
     
+    updateCamera();
+    
+    test = pygame.Rect(mouse.x-camera.x, mouse.y-camera.y, 5, 5);
+    pygame.draw.rect(screen, green, test);
     
     for event in pygame.event.get():
     
@@ -567,10 +680,24 @@ while running: # game loop
         
             pygame.quit();
             sys.exit();
-
+            
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            
+            tilePos = getTilePos(mouse.x, mouse.y, True);
+            chunkPos = getChunkPos(mouse.x, mouse.y);
+            print(str(chunkPos) + ", " + str(tilePos));
+            
+            if event.button == 3: # right click
+                try: chunks[chunkPos][tilePos] = [2];
+                except: pass;
+            if event.button == 1: # left click
+                try: chunks[chunkPos][tilePos] = [0];
+                except: pass;
+                
+                    
 
     pygame.display.update();
-    clock.tick(FPS/timeScale);
+    clock.tick(FPS);
     
 
 input() # stop game when it ends sometimes
