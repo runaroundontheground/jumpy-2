@@ -789,11 +789,13 @@ while running: # game loop
                         player.xv = 0;
                         player.yv = 0;
                         grapple.distance = math.dist((player.x, player.y), (grapple.x, grapple.y));
+                        if grapple.distance > 300:
+                            grapple.inUse = False;
                         dx = grapple.x - player.x;
                         dy = grapple.y - player.y;
                         grapple.angle = round(math.degrees(math.atan2(-dy, dx)));
                         
-                        grapple.angularVel = player.xv * 50;
+                        grapple.angularVel = player.xv * 5000;
                         
                 
                 
