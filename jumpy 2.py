@@ -42,7 +42,7 @@ class Camera():
         this.px = 0;
         this.py = 0;
         
-camera = Camera();
+
 
 red = pygame.Color("red");
 orange = pygame.Color("orange");
@@ -50,7 +50,8 @@ skyblue = pygame.Color("skyblue");
 green = pygame.Color("green");
 brown = pygame.Color("brown");
 gray = pygame.Color("gray");
-
+yellow = pygame.Color("yellow");
+blue = pygame.Color("blue");
 
 tileSize = 30;
 screenRect.x = -tileSize;
@@ -71,7 +72,7 @@ if useImage:
     stickAnim = {
         
         "run": {
-            "image": pygame.image.load(path + "images/stick figure/run.png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/run/run.png").convert_alpha(),
             "currentFrame": 0,
             "frames": 22, 
             "currentMidFrame": 0,
@@ -82,7 +83,7 @@ if useImage:
             },
         
         "walk": {
-            "image": pygame.image.load(path + "images/stick figure/walk.png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/walk/walk.png").convert_alpha(),
             "currentFrame": 0, 
             "frames": 16, 
             "currentMidFrame": 0, 
@@ -93,7 +94,7 @@ if useImage:
             },
         
         "idle": {
-            "image": pygame.image.load(path + "images/stick figure/idle.png").convert_alpha(), 
+            "image": pygame.image.load(path + "animations/idle/idle.png").convert_alpha(), 
             "currentFrame": 0, 
             "frames": 2, 
             "currentMidFrame": 0, 
@@ -104,7 +105,7 @@ if useImage:
             },
         
         "slide (in)": {
-            "image": pygame.image.load(path + "images/stick figure/slide (in).png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/slide/slide (in).png").convert_alpha(),
             "currentFrame": 0,
             "frames": 8, 
             "currentMidFrame": 0, 
@@ -115,7 +116,7 @@ if useImage:
             },
         
         "slide (mid)": {
-            "image": pygame.image.load(path + "images/stick figure/slide (mid).png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/slide/slide (mid).png").convert_alpha(),
             "currentFrame": 0,
             "frames": 3,
             "currentMidFrame": 0,
@@ -123,18 +124,40 @@ if useImage:
             "width": 1,
             "height": 1,
             "singleFrame": False
-           }
+           },
         
-    #    "slide (out)": {
-    #        "image": pygame.image.load(path + "images/stick figure/slide (out).png").convert_alpha(),
-    #        "currentFrame": 0,
-    #        "frames": 8,
-    #        "currentMidFrame": 0,
-    #        "lastMidFrame": 1,
-    #        "width": 1,
-    #        "height": 1,
-    #        "singleFrame": False
-    #    } 
+        "slide (out)": {
+            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 8,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+        },
+
+        "crouch": {
+            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 0,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+        },
+
+        "crouch walk": {
+            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 8,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+        }
 
     }
 
@@ -158,14 +181,13 @@ else:
     
     stickAnim = {
         "run": [pygame.Rect(0, 0, 28, 57), 0, 22, 0, 1, 11, 11],
-        # 22 frames, run at 22 - 44 fps, scale by 0.28
         "walk": [pygame.Rect(0, 0, 28, 57), 0, 16, 0, 3, 11, 11],
-        # 16 frames, run at 16 - 32 fps, scale by 0.255
         "idle": [pygame.Rect(0, 0, 28, 57), 0, 2, 0, FPS, 11, 11],
-        # 2 frames, run at 0.5 - 2 fps, scale by 0.255
-        #"crouch": [pygame.image.load(path+"/images/stick figure/crouch.png").convert_alpha(), 0, 0, 0, 0]
-        # single frame crouch animation, scale by 0.225
-        "slide": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0]
+        "slide (in)": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0],
+        "slide (mid)": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0],
+        "slide (out)": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0],
+        "crouch": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0],
+        "crouch walk": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0]
     }
 
     tileImgs = [
@@ -239,7 +261,6 @@ class Mouse:
         mouse.offsetX = 0;
         mouse.offsetY = 0;
 
-mouse = Mouse();
 
 class Tiles (): # this is here to make literally one thing work
     def __init__ (this):
@@ -262,10 +283,12 @@ class Player ():
         this.jumpPower = -3; # normal -3
         this.maxXV = 8; # normal 8
         this.maxYV = 300;
+        this.crouchSpeed = 3;
 
         this.tilePos = (0, 0);
         this.lastChunkPos = 0;
         this.tiles = Tiles();
+        this.chunkPos = (0, 0);
 
         this.accel = 0.3; # normal 0.3
         this.friction = 15; # normal 15
@@ -310,7 +333,7 @@ class Grapple () :
         this.inUse = False;
 
 
-grapple = Grapple();
+
     
 def getChunkPos (x, y) :
     
@@ -380,7 +403,7 @@ def getTile (x, y, otherInfo = False) :
     
     return data;
 
-player = Player();
+
 
 def updateCamera () :
     
@@ -401,6 +424,10 @@ def updateCamera () :
     camera.x = round(camera.realX);
     camera.y = round(camera.realY);
 
+grapple = Grapple();
+player = Player();
+mouse = Mouse();
+camera = Camera();
 
  # nav player
 def playerFrame () :
@@ -418,46 +445,65 @@ def playerFrame () :
         player.rect.height = int(player.height);
         
     updatePos();
-    def findChunksAndTiles():
-    
-        player.chunkPos = getChunkPos(player.x, player.y);
-    
-        player.tilePos = getTilePos(player.x + player.width / 2, player.y);
-    
-        if player.x + player.width > player.tilePos[0] + tileSize:
-            
-            if getTile(player.x, player.y + player.height) or getTile(player.x + player.width, player.y + player.height):
-                player.tiles.bottom = True;
-            else: player.tiles.bottom = False;
 
-            if getTile(player.x, player.y - 3) or getTile(player.x + player.width, player.y - 3):
-                player.tiles.top = True;
-            else: player.tiles.top = False;
-        else:
-            player.tiles.bottom = getTile(player.x, player.y + player.height);
-            player.tiles.top = getTile(player.x, player.y - 3);
+    def findChunksAndTiles():
+
+        player.tilePos = getTilePos(player.x + player.width / 2, player.y);
+        player.chunkPos = getChunkPos(player.x, player.y);
+
+        player.tiles.top = False; player.tiles.bottom = False;
+        player.tiles.left = False; player.tiles.right = False;
+
+        player.tiles.left = getTile(player.x - 1, player.y);
+        player.tiles.right = getTile(player.x + player.width + 1, player.y);
         
-        player.tiles.left = getTile(player.x - 3, player.y);
-        player.tiles.right = getTile(player.x + player.width + 3, player.y);
-        
-        if not player.state == "slide":
+        if not player.state == "slide" and not player.state == "crouch":
             if getTile(player.x - 3, player.y + tileSize): player.tiles.left = True;
             if getTile(player.x + player.width, player.y + tileSize): player.tiles.right = True;
+    
+        if not player.x == player.tilePos[0]: # player is not in a single tile
+
+            bottomLeft = getTile(player.x, player.y + player.height);
+            bottomRight = getTile(player.x + player.width, player.y + player.height);
+
+            if bottomLeft or bottomRight:
+
+                if player.state == "slide" or player.state == "crouch": slideHeight = 0;
+                else: slideHeight = tileSize;
+
+                if bottomRight and not getTile(player.x + player.width, player.y + slideHeight):
+                    player.tiles.bottom = True;
+
+                if bottomLeft and not getTile(player.x, player.y + slideHeight):
+                    player.tiles.bottom = True;
+            
+            if getTile(player.x + abs(player.xv), player.y - 1) or getTile(player.x + player.width - abs(player.xv), player.y - 1):
+                player.tiles.top = True;
+
+        else:
+            player.tiles.bottom = getTile(player.x, player.y + player.height);
+            player.tiles.top = getTile(player.x, player.y -1);
+            
+            
+        
+        
     
     findChunksAndTiles();
     
     left = keys[pygame.K_a];
     right = keys[pygame.K_d];
-    up = keys[pygame.K_SPACE];
-    w = keys[pygame.K_w];
+    space = keys[pygame.K_SPACE];
+    up = keys[pygame.K_w];
     down = keys[pygame.K_s];
     
     player.state = player.anim;
     if player.state == "slide (in)" or player.state == "slide (mid)" or player.state == "slide (out)":
         player.state = "slide";
+    if player.state == "crouch" or player.state == "crouch walk":
+        player.state = "crouch";
         
         
-    def unstuckPlayer () : # and gravity apparently
+    def unstuckPlayerX () :
     
         if player.xv > 0 and player.tiles.right:
             player.xv = 0;
@@ -467,8 +513,10 @@ def playerFrame () :
             player.xv = 0;
             player.x = player.tilePos[0];
         
+        
+    def unstuckPlayerY ():
+
         if player.tiles.bottom: 
-            if useImage: screen.blit(tileImgs[3], (100, 100)); # show if ground collided without print's lag
             player.yv = 0;
             player.y = player.tilePos[1];
         elif not grapple.inUse:
@@ -478,10 +526,10 @@ def playerFrame () :
             if player.yv < 0:
                 player.yv = 0;
     
-    unstuckPlayer();
+    unstuckPlayerY();
     
     if grapple.inUse:
-        pygame.draw.line(screen, orange, (player.x - camera.x, player.y - camera.y), (grapple.x - camera.x, grapple.y - camera.y));
+        pygame.draw.line(screen, orange, (player.x + player.width/2- camera.x, player.y + player.height/2 - camera.y), (grapple.x - camera.x, grapple.y - camera.y));
         
         grapple.distanceX = math.cos(math.radians(grapple.angle));
         grapple.distanceY = math.sin(math.radians(grapple.angle));
@@ -495,11 +543,12 @@ def playerFrame () :
         if grapple.angle > 90: grapple.angularVel += gravity * grapple.distanceX * 3;
         if grapple.angle < 90: grapple.angularVel += gravity * grapple.distanceX * 3;
         
-        if w and grapple.distance > 3:
+        if up and grapple.distance > 3:
             grapple.distance -= 5;
         if down and grapple.distance < 300:
             grapple.distance += 5;
-        
+        if space:
+            grapple.inUse = False;
         grapple.angle += grapple.angularVel * timeScale;
         grapple.angularVel -= grapple.angularVel / 100 * timeScale; 
         
@@ -527,7 +576,7 @@ def playerFrame () :
                 if player.xv > -player.maxXV: player.xv -= accel;
             
             if player.tiles.bottom:
-                if up and not down and not player.tiles.top: player.yv = player.jumpPower;
+                if space and not down and not player.tiles.top: player.yv = player.jumpPower;
                 if player.xv == 0: player.anim = "idle";
                 elif abs(player.xv) > player.maxXV / 2: 
                         player.anim = "run";
@@ -553,16 +602,31 @@ def playerFrame () :
         if player.xv > 0: player.flipH = False;
         elif player.xv < 0: player.flipH = True;
 
+        def doSlideThings():
+            if player.state == "slide":
+                    if not down:
+                        if abs(player.xv) < player.maxXV / 2:
+                            if not player.tiles.top:
+                                player.anim = "idle";
+                                player.y -= player.width;
+                                player.height = player.width * 2;
+                            else:
+                                player.anim = "crouch";
+        doSlideThings();
+
+        def doCrouchThings():
+            if player.state == "crouch":
+                if left:
+                    player.x -= player.crouchSpeed;
+                if right:
+                    player.x += player.crouchSpeed;
+        doCrouchThings();
+
+    unstuckPlayerX();
     
-        if player.state == "slide":
-                if not down:
-                    if abs(player.xv) < player.maxXV / 2:
-                        if not player.tiles.top:
-                            player.anim = "idle";
-                            player.y -= player.width;
-                            player.height = player.width * 2;
-                        else:
-                            player.anim = "crouch";
+    if player.tiles.bottom:
+        if player.xv == 0:
+            player.anim = "idle";
 
     def playerDebug () :
         global placeBlock, timeScale;
@@ -570,9 +634,25 @@ def playerFrame () :
     
         player.rect.x -= camera.x;
         player.rect.y -= camera.y;
-    
+        
+        
+
         pygame.draw.rect(screen, green, player.rect);
-    
+        
+        if player.tiles.bottom:
+            bottomRect = pygame.Rect(player.tilePos[0] - camera.x, player.tilePos[1] - camera.y + tileSize * 2, tileSize, tileSize);
+            pygame.draw.rect(screen, yellow, bottomRect);
+        if player.tiles.top:
+            topRect = pygame.Rect(player.tilePos[0] - camera.x, player.tilePos[1] - camera.y - tileSize, tileSize, tileSize);
+            pygame.draw.rect(screen, blue, topRect);
+        if player.tiles.left:
+            leftRect = pygame.Rect(player.tilePos[0] - camera.x - tileSize, player.tilePos[1] - camera.y, tileSize, tileSize);
+            pygame.draw.rect(screen, orange, leftRect);
+        if player.tiles.right:
+            rightRect = pygame.Rect(player.tilePos[0] - camera.x + tileSize, player.tilePos[1] - camera.y, tileSize, tileSize);
+            pygame.draw.rect(screen, red, rightRect);
+        
+        
         player.rect = bkRect;
         
         if keys[pygame.K_b]:
@@ -774,10 +854,16 @@ while running: # game loop
                     
                     if grapple.inUse:
                         grapple.inUse = False;
-                        player.yv = grapple.distanceX * grapple.distance - grapple.distance;
-                        player.xv = grapple.distanceY * grapple.distance - grapple.distance;
-                        player.xv /= 50;
-                        player.yv /= 50;
+                        
+                        player.yv = grapple.distanceX - grapple.distance * -grapple.angularVel;
+                        player.xv = grapple.distanceY - grapple.distance * -grapple.angularVel;
+                        if grapple.angle > 90: player.yv *= -1;
+                        
+
+                        if player.xv > 10: player.xv = 6;
+                        if player.xv < -10: player.xv = -6;
+                        if player.yv > 10: player.yv = 6;
+                        if player.yv < -10: player.yv = -6;
                          
                         print(player.xv)
                         print(player.yv)
