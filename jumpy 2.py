@@ -6,6 +6,9 @@ sW, sH = 1200, 800; # normally 600, 400
 screen = pygame.display.set_mode((sW, sH));
 screenRect = pygame.Rect(0, 0, sW, sH);
 clock = pygame.time.Clock();
+
+hotbarRect = pygame.Rect(0, 0, 50, 50);
+
 path = os.path.dirname(os.path.realpath(__file__));
 path += "/";
 useImage = False;
@@ -22,14 +25,7 @@ FPS = 60;
 timeScale = 1.0;
 
 gravity = 0.3;
-placeBlock = False;
-
-def dist (pos1, pos2) :
-    x = (pos1[0] - pos2[1]) ** 2;
-    y = (pos1[1] - pos2[1]) ** 2;
-    distance = math.sqrt(x + y);
-    return distance;
-    
+placeBlock = False;    
 
 
 class Camera():
@@ -262,18 +258,16 @@ screenChunks[1] = math.ceil(sH / totalChunkSize) + 2;
 
 
 
-def generateChunk (chunkX, chunkY = 0) :
+def generateChunk (chunkPos) :
 
     chunkData = {};
-    if type(chunkX) == "tuple":
-        chunkX = chunkX[0];
-        chunkY = chunkY[0];
+    
     for x in range(chunkSize):
         for y in range(chunkSize):
             
             
-            tileX = chunkX * chunkSize + x;
-            tileY = chunkY * chunkSize + y;
+            tileX = chunkPos[0] * chunkSize + x;
+            tileY = chunkPos[1] * chunkSize + y;
             
             
             
@@ -292,9 +286,39 @@ def generateChunk (chunkX, chunkY = 0) :
             
             
     
-    chunks[(chunkX, chunkY)] = chunkData;
+    chunks[chunkPos] = chunkData;
     
-    
+
+# item classes
+
+class tileItem ():
+    def __init__(this):
+        this.data = [1];
+
+    def use(this):
+        if mouse.button == 1:
+            testChunk((mouse.x, mouse.y));
+            chunkPos = getChunkPos((mouse.x, mouse.y));
+            tilePos = getTilePos(mouse.x, mouse.y);
+
+            chunks[chunkPos][tilePos] = this.data;
+
+class toolItem ():
+    def __init__(this, breakType = "all"):
+        this.breakType = breakType;
+    def use(this):
+        
+        if mouse.button == 1:
+            if True: pass;
+            testChunk((mouse.x, mouse.y));
+            chunkPos = getChunkPos((mouse.x, mouse.y));
+            tilePos = getTilePos(mouse.x, mouse.y);
+
+            chunks[chunkPos][tilePos] = [0];
+
+#class meleeItem ():
+
+#class rangedItem ():
     
 class Mouse:
     def __init__(mouse):
@@ -310,13 +334,23 @@ class Mouse:
         mouse.offsetX = 0;
         mouse.offsetY = 0;
 
-
-class Tiles (): # this is here to make literally one thing work
+class Tiles ():
     def __init__ (this):
         this.right = False;
         this.left = False;
         this.top = False;
         this.bottom = False;
+
+class Hotbar ():
+    def __init__(this):
+        this.slot = 1;
+        this.slotContents = {
+            0: "none",
+            1: "none",
+            2: "none",
+            3: "none",
+            4: "none"
+        }
 
 class Player ():
     def __init__(this):
@@ -365,15 +399,22 @@ class Player ():
 
         this.image = stickAnim;
         
-        this.slot = 1; # default 1
+        this.hotbar = Hotbar();
+        this.hotbar.slotContents[0] = toolItem();
+        this.inventory = {
+            0: "none",
+            1: "none",
+            2: "none",
+            3: "none",
+            4: "none",
+            5: "none",
+            6: "none",
+            7: "none",
+            8: "none",
+            "open": False
+        }
 
         this.useTime = 0;
-        
-
- # pre-generate some chunks
-for x in range(10):
-    for y in range(3):
-        generateChunk(x, y);
         
 class Grapple () :
     def __init__(this):
@@ -406,33 +447,32 @@ class Grapple () :
         if grapple.angle > 270: player.yv *= -1;
         elif grapple.angle > 180: player.yv *= -1; player.xv *= -1;
         elif grapple.angle > 90: player.yv *= -1;
-        print(grapple.angle);
         
         player.xv /= 100;
         player.yv /= 100;
 
-        if player.xv > 10: player.xv = 10;
-        if player.xv < -10: player.xv = -10;
-        if player.yv > 10: player.yv = 10;
-        if player.yv < -10: player.yv = -10;
         
     def hook (this):
-        #if getTile(mouse.x, mouse.y):
-            grapple.hooked = True;
-            grapple.x = mouse.x;
-            grapple.y = mouse.y;
-            
-            grapple.distance = math.dist((player.x, player.y), (grapple.x, grapple.y));
-            #if grapple.distance > 300:
-            #    grapple.inUse = False;
-            dx = grapple.x - player.x;
-            dy = grapple.y - player.y;
+    
+        grapple.hooked = True;
+        grapple.fired = False;
+        
+        grapple.distance = math.dist((player.x, player.y), (grapple.x, grapple.y));
+        #if grapple.distance > 300:
+        #    grapple.inUse = False;
+        dx = grapple.x - player.x;
+        dy = grapple.y - player.y;
 
-            grapple.angle = round(math.degrees(math.atan2(-dy, dx)));
-            
-            #grapple.angularVel = player.xv * 1;
-            player.xv = 0;
-            player.yv = 0;
+        grapple.angle = round(math.degrees(math.atan2(-dy, dx)));
+        
+        grapple.angularVel = player.xv + player.yv;
+        grapple.angularVel /= 10;
+
+        player.xv = 0;
+        player.yv = 0;
+
+        grapple.xv = 0;
+        grapple.yv = 0;
     
     def fire (this):
 
@@ -457,11 +497,10 @@ class Grapple () :
         this.x += this.xv;
         this.y += this.yv;
 
-        if getTile(this.x, this.y): grapple.hooked = True;
+        if math.dist((player.x, player.y), (this.x, this.y)) > 500: grapple.fired = False; grapple.hooked = False;
 
+        if getTile(this.x, this.y): grapple.hook();
 
-
-    
 def getChunkPos (x, y) :
     
     chunkX = math.floor(x / (totalChunkSize));
@@ -469,12 +508,12 @@ def getChunkPos (x, y) :
     
     return (chunkX, chunkY);
 
-def testChunk (x, y) :
+def testChunk (pos) :
     
     try:
-        chunks[(x, y)];
+        chunks[pos];
     except:
-        chunks[(x, y)] = generateChunk(x, y);
+        generateChunk(pos);
         return False;
     else:
         return True;
@@ -501,7 +540,7 @@ def getTilePos (x, y, withinChunk = False):
     
 def getTile (x, y, otherInfo = False) :
     
-    chunk = getChunkPos(x, y);
+    chunkPos = getChunkPos(x, y);
     
     x = math.floor(x/tileSize);
     y = math.floor(y/tileSize);
@@ -518,7 +557,8 @@ def getTile (x, y, otherInfo = False) :
     tileX = int(str(x)[-1]);
     tileY = int(str(y)[-1]);
     
-    testChunk(tileX, tileY)
+    testChunk(chunkPos);
+    tile = chunks[chunkPos][(tileX, tileY)];
     # if testChunk returns true, tile = thing
         
     data = tile[0];
@@ -559,13 +599,13 @@ def playerFrame () :
     global timeScale
     
     def updatePos():
-        global timeScale
+        global timeScale;
         player.px = player.x;
         player.py = player.y;
         
-
-        if not player.lockX: player.x += player.xv * timeScale;
-        if not player.lockY: player.y += player.yv * timeScale;
+        if not grapple.hooked:
+            if not player.lockX: player.x += player.xv * timeScale;
+            if not player.lockY: player.y += player.yv * timeScale;
         
         player.rect.x = int(player.x);
         player.rect.y = int(player.y);
@@ -626,24 +666,74 @@ def playerFrame () :
     space = keys[pygame.K_SPACE];
     up = keys[pygame.K_w];
     down = keys[pygame.K_s];
-    
-    
-    def inventoryStuff(): # or items
+
+    def hotbarStuff():
+        
+        hotbarRect.x = sW/2 - hotbarRect.width * 3;
+        hotbarRect.y = 50;
+
+        def drawAndUpdateX():
+            pygame.draw.rect(screen, blue, hotbarRect);
+            hotbarRect.x += hotbarRect.width + 3;
+        
+        for unusedNumber in range(5):
+            drawAndUpdateX();
 
         if mouse.down:
+            item = player.hotbar.slotContents[player.hotbar.slot];
 
-            if placeBlock and player.useTime == 0:
+            if not item == "none":
+                item.use();
+        if placeBlock and player.useTime == 0:
 
                 tilePos = getTilePos(mouse.x, mouse.y, True);
                 chunkPos = getChunkPos(mouse.x, mouse.y);
 
                 if mouse.button == 3: # right click
-                    try: chunks[chunkPos][tilePos] = [2];
+                    try: chunks[chunkPos][tilePos];
                     except: pass;
+                    else:
+                        if not player.rect.collidepoint(mouse.x, mouse.y):
+                            # eventually check for adjacent tiles to allow placement
+                            chunks[chunkPos][tilePos] = [2];
+
                 if mouse.button == 1: # left click
-                    try: chunks[chunkPos][tilePos] = [0];
+                    try: chunks[chunkPos][tilePos];
                     except: pass;
+                    else:
+                        chunks[chunkPos][tilePos] = [0];
+
                 #player.useTime = 5; make player have a delay so you don't build super fast
+        
+        if keys[pygame.K_1]: player.hotbar.slot = 0;
+        if keys[pygame.K_2]: player.hotbar.slot = 1;
+        if keys[pygame.K_3]: player.hotbar.slot = 2;
+        if keys[pygame.K_4]: player.hotbar.slot = 3;
+        if keys[pygame.K_5]: player.hotbar.slot = 4;
+
+    hotbarStuff();
+    def inventoryStuff():
+
+        if keys[pygame.K_e]:
+            if player.inventory["open"]: player.inventory["open"] = False;
+            else: player.inventory["open"] = True;
+
+        if player.inventory["open"]:
+            hotbarRect.x = sW/2 - hotbarRect.width * 3;
+
+            def drawInventoryAndUpdate():
+                for x in range(3):
+                    hotbarRect.y = sH/2 - hotbarRect.height * 3;
+                    hotbarRect.x += hotbarRect.width + 3;
+                    for y in range(3):
+                        pygame.draw.rect(screen, blue, hotbarRect);
+
+                        hotbarRect.y += hotbarRect.height + 3;
+            drawInventoryAndUpdate();
+        
+        if mouse.down:
+
+            pass
                         
         if keys[pygame.K_q]:
                 if not grapple.hooked: grapple.fire();
@@ -685,7 +775,7 @@ def playerFrame () :
     
     if grapple.fired or grapple.hooked:
 
-        pygame.draw.line(screen, black, (player.x + player.width/2 - camera.x, player.y + player.height/2 - camera.y), (grapple.x - camera.x, grapple.y - camera.y));
+        pygame.draw.line(screen, black, (player.x + player.width/2 - camera.x, player.y + player.height/2 - camera.y), (grapple.x - camera.x, grapple.y - camera.y), 5);
         
         if grapple.fired: 
             grapple.update();
@@ -700,19 +790,38 @@ def playerFrame () :
             
             if grapple.angle > 360: grapple.angle -= 360;
             if grapple.angle < 0: grapple.angle += 360;
+
+            if not getTile(grapple.x, grapple.y):
+                grapple.hooked = False;
             
 
             grapple.angularVel += gravity * grapple.distanceX * timeScale;
 
-            if player.tiles.right and grapple.angularVel > 0:
+            def resetPosX():
                 grapple.angularVel = 0;
                 player.x = player.tilePos[0];
+                grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
+            def resetPosY(num = 0):
+                player.y = player.tilePos[1] + num;
+                grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
+
+            if player.tiles.right and grapple.angularVel > 0:
+                resetPosX();
+
+            if player.tiles.left and grapple.angularVel < 0:
+                resetPosX();
+
+            if player.tiles.top:
+                resetPosY(tileSize + 1);
+
+            if player.tiles.bottom:
+                resetPosY(-1);
             
             
             if up and grapple.distance > 3:
-                grapple.distance -= 5;
+                grapple.distance -= 8;
             if down and grapple.distance < 300:
-                grapple.distance += 5;
+                grapple.distance += 8;
 
             if space:
                 grapple.unhook();
@@ -764,7 +873,14 @@ def playerFrame () :
                             player.anim = "wallclimb";
                             player.abilitesUsed["wallclimb"] = True;
                             player.yv = player.jumpPower * 1.5;
-        
+                # walljump
+                if player.tiles.right and space and left and player.xv > 0:
+                    player.yv = player.jumpPower;
+                    player.xv = player.jumpPower / 2;
+                if player.tiles.left and space and right and player.xv < 0:
+                    player.yv = player.jumpPower;
+                    player.xv = player.jumpPower / -2;
+
         if down:
             if player.tiles.bottom:
                 if abs(player.xv) > player.maxXV / 2 and not player.state == "slide":
@@ -831,9 +947,8 @@ def playerFrame () :
 
                     if space:
                         if left: jumpOff(-3);
-                        if right and not grabby:
-                            player.yv = -3;
-                    
+                    if right and up and not grabby:
+                        player.y -= 3;
                 if player.tiles.left:
 
                     grabby = getTile(player.x - tileSize, player.y);
@@ -844,15 +959,15 @@ def playerFrame () :
 
                     if space:
                         if right: jumpOff(3);
-                        if left and not grabby:
-                            player.yv = -3;
+                    if left and up and not grabby:
+                        player.y -= 3;
 
 
                 if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
 
-        doWallclimb()
+        doWallclimb();
 
     
 
@@ -894,8 +1009,8 @@ def playerFrame () :
         if keys[pygame.K_b]:
             placeBlock = True;
             
-        if keys[pygame.K_e]: timeScale = 0.1;
-        if keys[pygame.K_q]: timeScale = 1.0;
+        if keys[pygame.K_i]: timeScale = 0.1;
+        if keys[pygame.K_o]: timeScale = 1.0;
         
     playerDebug();
     
@@ -999,7 +1114,7 @@ def renderTiles (chunkPos) :
             try:
                 chunkList.append(chunks[(chunkX, chunkY)]);
             except:
-                generateChunk(chunkX, chunkY);
+                generateChunk((chunkX, chunkY));
                 chunkList.append(chunks[(chunkX, chunkY)]);
 
     
