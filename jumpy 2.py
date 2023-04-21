@@ -25,7 +25,7 @@ FPS = 60;
 timeScale = 1.0;
 
 gravity = 0.3;
-placeBlock = False;    
+
 
 
 class Camera():
@@ -269,13 +269,13 @@ def generateChunk (chunkPos) :
             tileX = chunkPos[0] * chunkSize + x;
             tileY = chunkPos[1] * chunkSize + y;
             
-            
+            #tileX is for adding like a beach or something once it go far enoghsiuus
             
             tileType = 0; # air
             if tileY == chunkSize: tileType = 1; # grass
             if tileY > chunkSize: tileType = 2; # dirt
             if tileY > chunkSize * 2:
-                if random.randint(1, int(100 / tileY)) == 1: tileType = 3; # stone
+                if random.randint(1, int(100 / tileY) + 1) == 1: tileType = 3; # stone
              # small chance for floating blocks
             if random.randint(1, 1000) == 1 and tileY < chunkSize: tileType = random.randint(1, 3);
             
@@ -290,17 +290,33 @@ def generateChunk (chunkPos) :
     
 
 # item classes
-
+if useImage:
+    icons = {
+        "grass": pygame.Surface.copy(tileImgs[1]),
+        "dirt": pygame.Surface.copy(tileImgs[2]),
+        "stone": pygame.Surface.copy(tileImgs[3])
+    };
+    for key, icon in icons.items():
+        pass # resize if needed, which is no currently
+else:
+    icons = {
+        "grass": [pygame.Rect.copy(tileImgs[1][0]), tileImgs[1][1]],
+        "dirt": [pygame.Rect.copy(tileImgs[2][0]), tileImgs[2][1]],
+        "stone": [pygame.Rect.copy(tileImgs[3][0]), tileImgs[3][1]]
+    };
+    for key, icon in icons.items():
+        pass # still resize, but not needed
 class tileItem ():
-    def __init__(this):
-        this.data = [1];
+    def __init__(this, data = [1], icon = "grass"):
+        this.data = data;
+        this.icon = icons[icon];
 
     def use(this):
-        if mouse.button == 1:
             testChunk((mouse.x, mouse.y));
-            chunkPos = getChunkPos((mouse.x, mouse.y));
-            tilePos = getTilePos(mouse.x, mouse.y);
+            chunkPos = getChunkPos(mouse.x, mouse.y);
+            tilePos = getTilePos(mouse.x, mouse.y, True);
 
+            if chunks[chunkPos][tilePos] == [0]: pass # normally place tile, otherwise blockswap and drop other tile
             chunks[chunkPos][tilePos] = this.data;
 
 class toolItem ():
@@ -311,8 +327,8 @@ class toolItem ():
         if mouse.button == 1:
             if True: pass;
             testChunk((mouse.x, mouse.y));
-            chunkPos = getChunkPos((mouse.x, mouse.y));
-            tilePos = getTilePos(mouse.x, mouse.y);
+            chunkPos = getChunkPos(mouse.x, mouse.y);
+            tilePos = getTilePos(mouse.x, mouse.y, True);
 
             chunks[chunkPos][tilePos] = [0];
 
@@ -370,7 +386,6 @@ class Player ():
         this.maxXV = 8; # normal 8
         this.maxYV = 300; # normal 300
         this.crouchSpeed = 3; # normal 3
-
         this.tilePos = (0, 0);
         this.lastChunkPos = 0;
         this.tiles = Tiles();
@@ -400,7 +415,8 @@ class Player ():
         this.image = stickAnim;
         
         this.hotbar = Hotbar();
-        this.hotbar.slotContents[0] = toolItem();
+        this.hotbar.slotContents[0] = tileItem();
+        this.hotbar.slot = 0;
         this.inventory = {
             0: "none",
             1: "none",
@@ -568,7 +584,8 @@ def getTile (x, y, otherInfo = False) :
     
     return data;
 
-
+grassItem = tileItem([1], "grass");
+dirtItem = tileItem([2], "dirt");
 
 def updateCamera () :
     
@@ -658,7 +675,7 @@ def playerFrame () :
             if getTile(player.x - 1, player.y + tileSize + thing): player.tiles.left = True;
             if getTile(player.x + player.width + 1, player.y + tileSize + thing): player.tiles.right = True;
     
-        
+    
     findChunksAndTiles();
     
     left = keys[pygame.K_a];
@@ -666,44 +683,53 @@ def playerFrame () :
     space = keys[pygame.K_SPACE];
     up = keys[pygame.K_w];
     down = keys[pygame.K_s];
+    if keys[pygame.K_t]: player.hotbar.slotContents[0] = dirtItem;
 
     def hotbarStuff():
         
         hotbarRect.x = sW/2 - hotbarRect.width * 3;
         hotbarRect.y = 50;
 
-        def drawAndUpdateX():
-            pygame.draw.rect(screen, blue, hotbarRect);
+        item = player.hotbar.slotContents[player.hotbar.slot];
+        
+        if mouse.down and mouse.button == 1 and item != "none":
+            item.use();
+                
+        def drawAndUpdateX(hotbarSlot):
+
+            selectedHotbarSize = 2;
+
+            if hotbarSlot == player.hotbar.slot:
+
+                hotbarColor = orange;
+                hotbarRect.x -= selectedHotbarSize;
+                hotbarRect.width += selectedHotbarSize * 2;
+                hotbarRect.y -= selectedHotbarSize;
+                hotbarRect.height += selectedHotbarSize * 2;
+
+            else:
+                hotbarColor = blue;
+
+            pygame.draw.rect(screen, hotbarColor, hotbarRect);
+            
+            if hotbarSlot == player.hotbar.slot:
+
+                hotbarRect.x += selectedHotbarSize; hotbarRect.width -= selectedHotbarSize * 2;
+                hotbarRect.y += selectedHotbarSize; hotbarRect.height -= selectedHotbarSize * 2;
+
+
+            item = player.hotbar.slotContents[hotbarSlot];
+            if item != "none":
+                if useImage:
+                    screen.blit(item.icon, hotbarRect);
+                else:
+                    x = hotbarRect.x + item.icon[0].width/2;
+                    y = hotbarRect.y + item.icon[0].height/2;
+                    pygame.draw.rect(screen, item.icon[1], (x, y, item.icon[0].width, item.icon[0].height));
             hotbarRect.x += hotbarRect.width + 3;
         
-        for unusedNumber in range(5):
-            drawAndUpdateX();
-
-        if mouse.down:
-            item = player.hotbar.slotContents[player.hotbar.slot];
-
-            if not item == "none":
-                item.use();
-        if placeBlock and player.useTime == 0:
-
-                tilePos = getTilePos(mouse.x, mouse.y, True);
-                chunkPos = getChunkPos(mouse.x, mouse.y);
-
-                if mouse.button == 3: # right click
-                    try: chunks[chunkPos][tilePos];
-                    except: pass;
-                    else:
-                        if not player.rect.collidepoint(mouse.x, mouse.y):
-                            # eventually check for adjacent tiles to allow placement
-                            chunks[chunkPos][tilePos] = [2];
-
-                if mouse.button == 1: # left click
-                    try: chunks[chunkPos][tilePos];
-                    except: pass;
-                    else:
-                        chunks[chunkPos][tilePos] = [0];
-
-                #player.useTime = 5; make player have a delay so you don't build super fast
+        for hotbarSlot in range(5):
+            drawAndUpdateX(hotbarSlot); 
         
         if keys[pygame.K_1]: player.hotbar.slot = 0;
         if keys[pygame.K_2]: player.hotbar.slot = 1;
@@ -1005,9 +1031,6 @@ def playerFrame () :
         
         
         player.rect = bkRect;
-        
-        if keys[pygame.K_b]:
-            placeBlock = True;
             
         if keys[pygame.K_i]: timeScale = 0.1;
         if keys[pygame.K_o]: timeScale = 1.0;
