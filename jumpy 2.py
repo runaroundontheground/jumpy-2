@@ -8,45 +8,30 @@ screenRect = pygame.Rect(0, 0, sW, sH);
 clock = pygame.time.Clock();
 
 hotbarRect = pygame.Rect(0, 0, 50, 50);
-
-path = os.path.dirname(os.path.realpath(__file__));
-path += "/";
-useImage = False;
-test = path + "testingfile.png";
-try:
-    test = pygame.image.load(test);
-except:
-    useImage = False;
+if os.path.exists("C:/jumpy 2 stuff"):
+    path = "C:/jumpy 2 stuff/";
+    useImage = True;
 else:
     useImage = True;
+    path = os.path.dirname(os.path.realpath(__file__));
+    path += "/";
 
-    
+
+
+try:
+    pass;
+except:
+    pass;
+
 FPS = 60;
 timeScale = 1.0;
-
 gravity = 0.3;
 
+enemies = [];
+projectiles = [];
+groundItems = [];
 
 
-class Camera():
-    def __init__(this):
-        
-        this.realX = 0;
-        this.realY = 0;
-        
-        this.x = 0;
-        this.y = 0;
-        
-        this.shakeTime = 0;
-        this.shakeStrength = 5;
-        
-        this.smoothness = 15;
-        
-        this.offsetX = 0;
-        this.offsetY = 0;
-        
-        this.px = 0;
-        this.py = 0;
         
 
 black = pygame.Color("black");
@@ -72,7 +57,7 @@ if useImage:
     
         width = stickAnim[animation]["image"].get_width();
         height = stickAnim[animation]["image"].get_height();
-        stickAnim[animation]["image"] = pygame.transform.scale(stickAnim[animation]["image"], (width * scale, height * scale));
+        stickAnim[animation]["image"] = pygame.transform.scale(stickAnim[animation]["image"], (round(width * scale), round(height * scale)));
         stickAnim[animation]["width"] = stickAnim[animation]["image"].get_width() / stickAnim[animation]["frames"];
         stickAnim[animation]["height"] = stickAnim[animation]["image"].get_height();
 
@@ -210,6 +195,9 @@ if useImage:
     
     ]
 
+    toolImgs = [
+        pygame.image.load(path + "images/multitool.png")
+    ]
     transformImage("run",  0.28);
     transformImage("walk", 0.255);
     transformImage("idle", 0.255);
@@ -294,10 +282,10 @@ if useImage:
     icons = {
         "grass": pygame.Surface.copy(tileImgs[1]),
         "dirt": pygame.Surface.copy(tileImgs[2]),
-        "stone": pygame.Surface.copy(tileImgs[3])
+        "stone": pygame.Surface.copy(tileImgs[3]),
+        "multitool": pygame.Surface.copy(toolImgs[0])
     };
-    for key, icon in icons.items():
-        pass # resize if needed, which is no currently
+    icons["multitool"] = pygame.transform.scale(icons["multitool"], (round(icons["multitool"].get_width() * 1.7), round(icons["multitool"].get_height() * 1.7)));
 else:
     icons = {
         "grass": [pygame.Rect.copy(tileImgs[1][0]), tileImgs[1][1]],
@@ -306,6 +294,7 @@ else:
     };
     for key, icon in icons.items():
         pass # still resize, but not needed
+
 class tileItem ():
     def __init__(this, data = [1], icon = "grass"):
         this.data = data;
@@ -320,8 +309,10 @@ class tileItem ():
             chunks[chunkPos][tilePos] = this.data;
 
 class toolItem ():
-    def __init__(this, breakType = "all"):
+    def __init__(this, breakType = "all", icon = "multitool"):
         this.breakType = breakType;
+        this.icon = icons[icon];
+
     def use(this):
         
         if mouse.button == 1:
@@ -330,12 +321,25 @@ class toolItem ():
             chunkPos = getChunkPos(mouse.x, mouse.y);
             tilePos = getTilePos(mouse.x, mouse.y, True);
 
+            if chunks[chunkPos][tilePos] != [0]:
+                otherTilePos = getTilePos(mouse.x, mouse.y);
+                spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = chunks[chunkPos][tilePos][0]);
+
             chunks[chunkPos][tilePos] = [0];
 
 #class meleeItem ():
 
 #class rangedItem ():
+
+items = [
+    0,
+    tileItem([1], "grass"),
+    tileItem([2], "dirt"),
+    tileItem([3], "stone"),
     
+    toolItem()
+]
+
 class Mouse:
     def __init__(mouse):
         
@@ -394,6 +398,7 @@ class Player ():
         this.accel = 0.3; # normal 0.3
         this.friction = 15; # normal 15
         this.angle = 0;
+        this.bHopSpeed = 0.5; # normal 0.5
         
         this.abilityToggles = {
             "slide": True,
@@ -415,7 +420,10 @@ class Player ():
         this.image = stickAnim;
         
         this.hotbar = Hotbar();
-        this.hotbar.slotContents[0] = tileItem();
+
+        this.hotbar.slotContents[0] = items[1];
+        this.hotbar.slotContents[1] = items[4];
+
         this.hotbar.slot = 0;
         this.inventory = {
             0: "none",
@@ -480,9 +488,10 @@ class Grapple () :
         dy = grapple.y - player.y;
 
         grapple.angle = round(math.degrees(math.atan2(-dy, dx)));
-        
-        grapple.angularVel = player.xv + player.yv;
-        grapple.angularVel /= 10;
+        otherNum = player.yv;
+        if player.xv < 0: otherNum *= -1;
+        grapple.angularVel = player.xv + otherNum;
+        grapple.angularVel /= 3;
 
         player.xv = 0;
         player.yv = 0;
@@ -516,6 +525,44 @@ class Grapple () :
         if math.dist((player.x, player.y), (this.x, this.y)) > 500: grapple.fired = False; grapple.hooked = False;
 
         if getTile(this.x, this.y): grapple.hook();
+
+class Camera():
+    def __init__(this):
+        
+        this.realX = 0;
+        this.realY = 0;
+        
+        this.x = 0;
+        this.y = 0;
+        
+        this.shakeTime = 0;
+        this.shakeStrength = 5;
+        
+        this.smoothness = 15;
+        
+        this.offsetX = 0;
+        this.offsetY = 0;
+        
+        this.px = 0;
+        this.py = 0;
+
+class itemEntity():
+    def __init__(this, x = 0, y = 0, xv = 0, yv = 0, id = 1):
+
+        this.x = x;
+        this.y = y;
+
+        this.xv = xv;
+        this.yv = yv;
+
+        this.data = items[id];
+        this.itemId = id;
+        
+        this.image = this.data.icon;
+
+def spawnItem(x = 0, y = 0, xv = 0, yv = 0, id = "dirt"):
+    item = itemEntity(x, y, xv, yv, id);
+    groundItems.append(item);
 
 def getChunkPos (x, y) :
     
@@ -583,9 +630,6 @@ def getTile (x, y, otherInfo = False) :
     
     
     return data;
-
-grassItem = tileItem([1], "grass");
-dirtItem = tileItem([2], "dirt");
 
 def updateCamera () :
     
@@ -683,11 +727,11 @@ def playerFrame () :
     space = keys[pygame.K_SPACE];
     up = keys[pygame.K_w];
     down = keys[pygame.K_s];
-    if keys[pygame.K_t]: player.hotbar.slotContents[0] = dirtItem;
+    
 
     def hotbarStuff():
         
-        hotbarRect.x = sW/2 - hotbarRect.width * 3;
+        hotbarRect.x = round(sW/2 - hotbarRect.width * 3);
         hotbarRect.y = 50;
 
         item = player.hotbar.slotContents[player.hotbar.slot];
@@ -882,6 +926,10 @@ def playerFrame () :
                 # jump
                 if space and not down and not player.tiles.top and player.yv >= 0:
                     player.yv = player.jumpPower;
+                    if player.xv > 0:
+                        player.xv += player.bHopSpeed;
+                    if player.xv < 0:
+                        player.xv -= player.bHopSpeed;
 
                  # do animation checks
                 if player.xv == 0:
@@ -915,13 +963,14 @@ def playerFrame () :
                     player.y += player.width;
                     player.height = player.width;
         def doFriction():
-            if (not left and not right) or (left and right) or player.state == "slide":
-                # friction
-                friction = player.friction;
-                if player.state == "slide": friction *= 5;
-                player.xv -= player.xv / friction;
-                if player.xv > -0.1 and player.xv < 0.1:
-                    player.xv = 0;
+            if player.tiles.bottom:
+                if (not left and not right) or (left and right) or player.state == "slide":
+                    # friction
+                    friction = player.friction;
+                    if player.state == "slide": friction *= 5;
+                    player.xv -= player.xv / friction;
+                    if player.xv > -0.1 and player.xv < 0.1:
+                        player.xv = 0;
         doFriction();
 
         if player.xv > 0: player.flipH = False;
@@ -1097,7 +1146,7 @@ def playerFrame () :
             image = pygame.transform.rotate(image, player.angle + tilt);
             
 
-            screen.blit(image, (player.x-camera.x+num, player.y-camera.y+3+num2));
+            screen.blit(image, (round(player.x-camera.x+num), round(player.y-camera.y+3+num2)));
             
             updateAnimation();
             
@@ -1115,7 +1164,34 @@ def playerFrame () :
         print(player.chunkPos);
     player.lastChunkPos = player.chunkPos;
     
+def groundItemsFrame(this):
+    
+    this.x += this.xv;
+    this.y += this.yv;
 
+    if this.xv > 0.1 or this.xv < -0.1:
+        this.xv -= this.xv / 5;
+    else:
+        this.xv = 0;
+    
+    if getTile(this.x, this.y + tileSize):
+        this.yv = 0;
+    else:
+        this.yv += gravity;
+
+    this.rect = pygame.Rect(int(this.x), int(this.x), tileSize, tileSize);
+
+    if this.rect.collidepoint((player.x, player.y)): 
+        print("i should be unexist");
+    
+    pygame.draw.rect(screen, orange, (int(this.x - camera.x), int(this.y - camera.y), tileSize, tileSize));
+
+
+
+
+    coord = (round(this.x - camera.x), round(this.y - camera.y));
+
+    screen.blit(this.image, coord);
 
 
 
@@ -1196,8 +1272,17 @@ while running: # game loop
     cameraChunk = getChunkPos(int(player.x - sW/2 + camera.offsetX), int(player.y - sH/2 + camera.offsetY));
     
     renderTiles(cameraChunk);
-    playerFrame();
 
+    playerFrame();
+    if len(groundItems) > 400:
+        groundItems.reverse();
+        groundItems.pop();
+        groundItems.reverse();
+    i = len(groundItems) - 1;
+    while i > 0:
+        item = groundItems[i];
+        groundItemsFrame(item);
+        i -= 1;
     
     
     
