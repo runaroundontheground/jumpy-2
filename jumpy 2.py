@@ -18,11 +18,6 @@ else:
 
 
 
-try:
-    pass;
-except:
-    pass;
-
 FPS = 60;
 timeScale = 1.0;
 gravity = 0.3;
@@ -52,7 +47,7 @@ screenRect.height += tileSize;
     
 
 if useImage:
-    print("useing images");
+    
     def transformImage (animation, scale) :
     
         width = stickAnim[animation]["image"].get_width();
@@ -118,19 +113,29 @@ if useImage:
             "singleFrame": False
            },
         
-        "slide (out)": {
-            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
+        "slide (out, stand)": {
+            "image": pygame.image.load(path + "animations/slide/slide (out, stand).png").convert_alpha(),
             "currentFrame": 0,
             "frames": 8,
             "currentMidFrame": 0,
             "lastMidFrame": 1,
             "width": 1,
             "height": 1,
-            "singleFrame": True
+            "singleFrame": False
         },
+        
+        "slide (out, crouch)": {
+            "image": pygame.image.load(path + "animations/slide/slide (out, crouch).png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 8, # forgot how many it actually is
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
 
         "crouch": {
-            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/crouch/crouch (static).png").convert_alpha(),
             "currentFrame": 0,
             "frames": 1,
             "currentMidFrame": 0,
@@ -141,14 +146,14 @@ if useImage:
         },
 
         "crouch walk": {
-            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/crouch/crouch walk.png").convert_alpha(),
             "currentFrame": 0,
-            "frames": 8,
+            "frames": 16,
             "currentMidFrame": 0,
             "lastMidFrame": 1,
             "width": 1,
             "height": 1,
-            "singleFrame": True
+            "singleFrame": False
         },
 
         "swing": {
@@ -174,14 +179,14 @@ if useImage:
         },
 
         "wallclimb": {
-            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/wallclimb/wallclimb.png").convert_alpha(),
             "currentFrame": 0,
-            "frames": 1,
+            "frames": 8,
             "currentMidFrame": 0,
             "lastMidFrame": 1,
             "width": 1,
             "height": 1,
-            "singleFrame": True
+            "singleFrame": False
         }
 
     }
@@ -203,7 +208,12 @@ if useImage:
     transformImage("idle", 0.255);
     transformImage("slide (in)", 0.255);
     transformImage("slide (mid)", 0.255);
+    transformImage("slide (out, stand)", 0.255);
+    transformImage("slide (out, crouch)", 0.255);
     transformImage("crouch", 0.255);
+    transformImage("crouch walk", 0.255);
+    transformImage("wallclimb", 0.255);
+    transformImage("swing", 0.255);
     transformImage("fall", 0.255);
     
 
@@ -218,9 +228,7 @@ else:
         "slide (out)": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0],
         "crouch": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0],
         "crouch walk": [pygame.Rect(0, 0, 28, 28), 0, 0, 0, 0, 0],
-        "wallclimb": [pygame.Rect(0, 0, 28, 57), 0, 0, 0, 0, 0],
-        "tpose": [pygame.Rect(0, 0, 28, 57), 0, 0, 0, 0, 0]
-        
+        "wallclimb": [pygame.Rect(0, 0, 28, 57), 0, 0, 0, 0, 0]
     }
 
     tileImgs = [
