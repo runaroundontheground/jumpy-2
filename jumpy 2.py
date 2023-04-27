@@ -118,7 +118,7 @@ if useImage:
             "currentFrame": 0,
             "frames": 8,
             "currentMidFrame": 0,
-            "lastMidFrame": 1,
+            "lastMidFrame": 3,
             "width": 1,
             "height": 1,
             "singleFrame": False
@@ -127,12 +127,13 @@ if useImage:
         "slide (out, crouch)": {
             "image": pygame.image.load(path + "animations/slide/slide (out, crouch).png").convert_alpha(),
             "currentFrame": 0,
-            "frames": 8, # forgot how many it actually is
+            "frames": 7,
             "currentMidFrame": 0,
-            "lastMidFrame": 1,
+            "lastMidFrame": 4,
             "width": 1,
             "height": 1,
             "singleFrame": False
+        },
 
         "crouch": {
             "image": pygame.image.load(path + "animations/crouch/crouch (static).png").convert_alpha(),
@@ -179,7 +180,7 @@ if useImage:
         },
 
         "wallclimb": {
-            "image": pygame.image.load(path + "animations/wallclimb/wallclimb.png").convert_alpha(),
+            "image": pygame.image.load(path + "animations/tpose.png").convert_alpha(),
             "currentFrame": 0,
             "frames": 8,
             "currentMidFrame": 0,
@@ -212,7 +213,7 @@ if useImage:
     transformImage("slide (out, crouch)", 0.255);
     transformImage("crouch", 0.255);
     transformImage("crouch walk", 0.255);
-    transformImage("wallclimb", 0.255);
+    #transformImage("wallclimb", 0.255);
     transformImage("swing", 0.255);
     transformImage("fall", 0.255);
     
@@ -460,12 +461,12 @@ class Grapple () :
         this.distanceX = 0;
         this.distanceY = 0;
         
-        this.xv = 0;
-        this.yv = 0;
-        this.angularVel = 0;
-        this.angle = 0;
-        this.strength = 0.05;
-        this.launchVel = 20;
+        this.xv = 0; # normal 0
+        this.yv = 0; # normal 0
+        this.angularVel = 0; # normal 0
+        this.angle = 0; # normal 0
+        this.strength = 0.05; # normal 0.05
+        this.launchVel = 20;# normal 20
         
         this.fired = False;
         this.hooked = False;
@@ -567,6 +568,7 @@ class itemEntity():
         this.itemId = id;
         
         this.image = this.data.icon;
+        this.rect = pygame.Rect(0, 0, tileSize, tileSize);
 
 def spawnItem(x = 0, y = 0, xv = 0, yv = 0, id = "dirt"):
     item = itemEntity(x, y, xv, yv, id);
@@ -820,7 +822,7 @@ def playerFrame () :
     inventoryStuff();
 
     player.state = player.anim;
-    if player.state == "slide (in)" or player.state == "slide (mid)" or player.state == "slide (out)":
+    if player.state == "slide (in)" or player.state == "slide (mid)" or player.state == "slide (out, crouch)" or player.state == "slide (out, stand)":
         player.state = "slide";
     if player.state == "crouch" or player.state == "crouch walk":
         player.state = "crouch";
@@ -920,7 +922,7 @@ def playerFrame () :
         
         
     if not grapple.hooked:
-        if not player.state == "slide":
+        if not player.state == "slide" and not player.state == "crouch":
             
             accel = player.accel * timeScale;
             
@@ -965,7 +967,7 @@ def playerFrame () :
 
         if down:
             if player.tiles.bottom:
-                if abs(player.xv) > player.maxXV / 2 and not player.state == "slide":
+                if abs(player.xv) > player.maxXV / 1.1 and not player.state == "slide":
                     player.anim = "slide (in)";
                     player.state = "slide";
                     player.y += player.width;
@@ -993,20 +995,42 @@ def playerFrame () :
 
                 if not player.tiles.bottom or player.tiles.right or player.tiles.left:
                     unslide();
-                if not down:
-                    if abs(player.xv) < player.maxXV / 2:
-                        if not player.tiles.top:
-                            unslide();
-                        else:
-                            player.anim = "crouch";
+                
+                if abs(player.xv) < player.maxXV / 1.3:
+                    if player.tiles.top:
+                        player.anim = "slide (out, crouch)";
+                    else:
+                        player.anim = "slide (out, stand)";
+                if abs(player.xv) < player.maxXV / 2:
+                    if not player.tiles.top:
+                        unslide();
+                    elif player.tiles.top:
+                        player.anim = "crouch";
         doSlideThings();
 
         def doCrouchThings():
             if player.state == "crouch":
-                if left:
-                    player.x -= player.crouchSpeed;
-                if right:
-                    player.x += player.crouchSpeed;
+
+                def uncrouch():    
+                    player.anim = "idle";
+                    player.height = tileSize * 2;
+                    player.y -= tileSize;
+                
+                player.xv = 0;
+                player.anim = "crouch";
+
+                if left or right:
+                    player.anim = "crouch walk";
+                    if left:
+                        player.x -= 3 * timeScale;
+                        player.flipH = True;
+                    if right:
+                        player.x += 3 * timeScale;
+                        player.flipH = False;
+
+                if not player.tiles.top and not down:
+                    uncrouch()
+                
         doCrouchThings();
 
         def doWallclimb():
@@ -1049,7 +1073,6 @@ def playerFrame () :
                 if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
-
         doWallclimb();
 
     
@@ -1063,8 +1086,8 @@ def playerFrame () :
     
 
     def playerDebug () :
-        global placeBlock, timeScale;
-        bkRect = player.rect;
+        global timeScale;
+        
     
         player.rect.x -= camera.x;
         player.rect.y -= camera.y;
@@ -1087,11 +1110,11 @@ def playerFrame () :
             pygame.draw.rect(screen, red, rightRect);
         
         
-        player.rect = bkRect;
+        player.rect.x += camera.x;
+        player.rect.y += camera.y;
             
         if keys[pygame.K_i]: timeScale = 0.1;
         if keys[pygame.K_o]: timeScale = 1.0;
-        
     playerDebug();
     
     def playerTimers():
@@ -1100,6 +1123,10 @@ def playerFrame () :
     playerTimers();
 
     anim = player.image[player.anim];
+    if player.state == "slide (in)" or player.state == "slide (mid)" or player.state == "slide (out, crouch)" or player.state == "slide (out, stand)":
+        player.state = "slide";
+    if player.state == "crouch" or player.state == "crouch walk":
+        player.state = "crouch";
     
     def updateAnimation():
         if not anim["singleFrame"]:
@@ -1138,6 +1165,12 @@ def playerFrame () :
             if player.state == "slide":
                 num2 = -tileSize + 3;
                 num = -tileSize/2;
+                if player.anim != "slide (in)":
+                    num2 = 0;
+            if player.state == "crouch":
+                num2 = -4;
+                if player.anim == "crouch":
+                    num2 = -3;
 
             image = anim["image"];
 
@@ -1163,7 +1196,6 @@ def playerFrame () :
             player.image[player.anim][0].x = int(player.x) - camera.x;
             player.image[player.anim][0].y = int(player.y) - camera.y;
             pygame.draw.rect(screen, gray, player.image[player.anim][0]);
-    
     animate();
     
     
@@ -1177,6 +1209,9 @@ def groundItemsFrame(this):
     this.x += this.xv;
     this.y += this.yv;
 
+    this.rect.x = int(this.x);
+    this.rect.y = int(this.y);
+
     if this.xv > 0.1 or this.xv < -0.1:
         this.xv -= this.xv / 5;
     else:
@@ -1187,10 +1222,9 @@ def groundItemsFrame(this):
     else:
         this.yv += gravity;
 
-    this.rect = pygame.Rect(int(this.x), int(this.x), tileSize, tileSize);
 
-    if this.rect.collidepoint((player.x, player.y)): 
-        print("i should be unexist");
+    if this.rect.colliderect(player.rect): 
+        groundItems.remove(this);
     
     pygame.draw.rect(screen, orange, (int(this.x - camera.x), int(this.y - camera.y), tileSize, tileSize));
 
