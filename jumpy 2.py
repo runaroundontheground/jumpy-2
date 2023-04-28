@@ -169,7 +169,7 @@ if useImage:
         },
 
         "fall": {
-            "image": pygame.image.load(animPath + "fall.png").convert_alpha(),
+            "image": pygame.image.load(animPath + "tpose.png").convert_alpha(),
             "currentFrame": 0,
             "frames": 1,
             "currentMidFrame": 0,
