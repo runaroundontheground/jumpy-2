@@ -47,7 +47,8 @@ screenRect.height += tileSize;
     
 
 if useImage:
-    animPath = path + "animation/";
+    animPath = path + "animations/player (no item)/";
+    noImage = path + "animations/unfinished/tpose.png";
     def transformImage (animation, scale) :
     
         width = stickAnim[animation]["image"].get_width();
@@ -55,6 +56,7 @@ if useImage:
         stickAnim[animation]["image"] = pygame.transform.scale(stickAnim[animation]["image"], (round(width * scale), round(height * scale)));
         stickAnim[animation]["width"] = stickAnim[animation]["image"].get_width() / stickAnim[animation]["frames"];
         stickAnim[animation]["height"] = stickAnim[animation]["image"].get_height();
+        if stickAnim[animation]["image"] == noImage: print("it's tpose?");
 
     stickAnim = {
         
@@ -158,7 +160,7 @@ if useImage:
         },
 
         "swing": {
-            "image": pygame.image.load(animPath + "tpose.png").convert_alpha(),
+            "image": pygame.image.load(noImage).convert_alpha(),
             "currentFrame": 0,
             "frames": 8,
             "currentMidFrame": 0,
@@ -169,7 +171,7 @@ if useImage:
         },
 
         "fall": {
-            "image": pygame.image.load(animPath + "tpose.png").convert_alpha(),
+            "image": pygame.image.load(noImage).convert_alpha(),
             "currentFrame": 0,
             "frames": 1,
             "currentMidFrame": 0,
@@ -180,7 +182,7 @@ if useImage:
         },
 
         "wallclimb": {
-            "image": pygame.image.load(animPath + "tpose.png").convert_alpha(),
+            "image": pygame.image.load(noImage).convert_alpha(),
             "currentFrame": 0,
             "frames": 8,
             "currentMidFrame": 0,
@@ -191,18 +193,20 @@ if useImage:
         }
 
     }
-    imgPath = path + "images/";
+    
+    tilePath = path + "images/tiles/";
+    toolPath = path + "images/tools/";
     tileImgs = [
     
     0,
-    pygame.image.load(imgPath + "grass.png").convert(),
-    pygame.image.load(imgPath + "dirt.png").convert(),
-    pygame.image.load(imgPath + "stone.png").convert()
+    pygame.image.load(tilePath + "grass.png").convert(),
+    pygame.image.load(tilePath + "dirt.png").convert(),
+    pygame.image.load(tilePath + "stone.png").convert()
     
     ]
 
     toolImgs = [
-        pygame.image.load(imgPath + "multitool.png")
+        pygame.image.load(toolPath + "multitool.png")
     ]
     
     transformImage("run",  0.28);
@@ -214,7 +218,7 @@ if useImage:
     transformImage("slide (out, crouch)", 0.255);
     transformImage("crouch", 0.255);
     transformImage("crouch walk", 0.255);
-    #transformImage("wallclimb", 0.255);
+    transformImage("wallclimb", 0.255);
     transformImage("swing", 0.255);
     transformImage("fall", 0.255);
     
