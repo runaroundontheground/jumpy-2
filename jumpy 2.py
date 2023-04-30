@@ -227,6 +227,10 @@ toolImgs = {
     "multitool": pygame.image.load(toolPath + "multitool.png").convert_alpha()
 };
 
+meleeImgs = {
+    "katana": pygame.image.load(path + "images/melee/katana.png")
+}
+
 crackImgs = {
     "light": pygame.image.load(path + "images/cracks/light.png").convert_alpha(),
     "medium": pygame.image.load(path + "images/cracks/medium.png").convert_alpha(),
@@ -334,7 +338,8 @@ icons = {
     "grass": pygame.Surface.copy(tileImgs["grass"]),
     "dirt": pygame.Surface.copy(tileImgs["dirt"]),
     "stone": pygame.Surface.copy(tileImgs["stone"]),
-    "multitool": pygame.Surface.copy(toolImgs["multitool"])
+    "multitool": pygame.Surface.copy(toolImgs["multitool"]),
+    "katana": pygame.Surface.copy(meleeImgs["katana"])
 };
 icons["multitool"] = pygame.transform.scale(icons["multitool"], (round(icons["multitool"].get_width() * 1.7), round(icons["multitool"].get_height() * 1.7)));
 
@@ -426,6 +431,7 @@ class meleeItem ():
     def __init__(this, damage = 3, attackRange = 2):
         this.damage = damage;
         this.attackRange = attackRange;
+        this.attackAngle = 90;
         
 
 #class rangedItem ():
@@ -487,6 +493,7 @@ class Player ():
         this.lockY = False;
 
         this.rect = pygame.Rect(0, 0, 0, 0);
+        this.meleeRect = pygame.Rect(0, 0, 0, 0);
         
         this.jumpPower = -5; # normal -5
         this.maxXV = 8; # normal 8
@@ -777,6 +784,8 @@ def playerFrame () :
         
         player.rect.x = int(player.x);
         player.rect.y = int(player.y);
+
+        player.meleeRect.x = player.x;
         
         player.rect.width = int(player.width);
         player.rect.height = int(player.height);
