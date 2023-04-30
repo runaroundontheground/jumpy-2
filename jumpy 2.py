@@ -46,194 +46,216 @@ screenRect.width += tileSize;
 screenRect.height += tileSize;
     
 
-if useImage:
-    animPath = path + "animations/player (no item)/";
-    noImage = path + "animations/unfinished/tpose.png";
 
-    def transformImage (animation, scale) :
+animPath = path + "animations/player (no item)/";
+noImage = path + "animations/unfinished/tpose.png";
 
-        data = stickAnim[animation];
+def transformImage (animation, scale) :
 
-        width = data["image"].get_width();
-        height = data["image"].get_height();
+    data = stickAnim[animation];
 
-        if data["image"] == noImage: 
-            print("it's tpose?");
+    width = data["image"].get_width();
+    height = data["image"].get_height();
 
-        data["image"] = pygame.transform.scale(data["image"], (round(width * scale), round(height * scale)));
+    if data["image"] == noImage: 
+        print("it's tpose?");
 
-        if not data["image"] == noImage:
-            data["width"] = data["image"].get_width() / data["frames"];
-            data["height"] = data["image"].get_height();
-        
-        stickAnim[animation] = data;
+    data["image"] = pygame.transform.scale(data["image"], (round(width * scale), round(height * scale)));
 
-    stickAnim = {
-        
-        "run": {
-            "image": pygame.image.load(animPath + "run.png").convert_alpha(),
-            "currentFrame": 0,
-            "frames": 22, 
-            "currentMidFrame": 0,
-            "lastMidFrame": 1,
-            "width": 1, # this isn't assigned until later
-            "height": 1, # this isn't assigned until later
-            "singleFrame": False
-            },
-        
-        "walk": {
-            "image": pygame.image.load(animPath + "walk.png").convert_alpha(),
-            "currentFrame": 0, 
-            "frames": 16, 
-            "currentMidFrame": 0, 
-            "lastMidFrame": 1, 
-            "width": 1,
-            "height": 1,
-            "singleFrame": False
-            },
-        
-        "idle": {
-            "image": pygame.image.load(animPath + "idle.png").convert_alpha(), 
-            "currentFrame": 0, 
-            "frames": 2, 
-            "currentMidFrame": 0, 
-            "lastMidFrame": FPS*2, 
-            "width": 1,
-            "height": 1,
-            "singleFrame": False
-            },
-        
-        "slide (in)": {
-            "image": pygame.image.load(animPath + "slide (in).png").convert_alpha(),
-            "currentFrame": 0,
-            "frames": 8, 
-            "currentMidFrame": 0, 
-            "lastMidFrame": 1,
-            "width": 1,
-            "height": 1, 
-            "singleFrame": False
-            },
-        
-        "slide (mid)": {
-            "image": pygame.image.load(animPath + "slide (mid).png").convert_alpha(),
-            "currentFrame": 0,
-            "frames": 3,
-            "currentMidFrame": 0,
-            "lastMidFrame": 0,
-            "width": 1,
-            "height": 1,
-            "singleFrame": False
-           },
-        
-        "slide (out, stand)": {
-            "image": pygame.image.load(animPath + "slide (out, stand).png").convert_alpha(),
-            "currentFrame": 0,
-            "frames": 8,
-            "currentMidFrame": 0,
-            "lastMidFrame": 3,
-            "width": 1,
-            "height": 1,
-            "singleFrame": False
+    if not data["image"] == noImage:
+        data["width"] = data["image"].get_width() / data["frames"];
+        data["height"] = data["image"].get_height();
+    
+    stickAnim[animation] = data;
+
+stickAnim = {
+    
+    "run": {
+        "image": pygame.image.load(animPath + "run.png").convert_alpha(),
+        "currentFrame": 0,
+        "frames": 22, 
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1, # this isn't assigned until later
+        "height": 1, # this isn't assigned until later
+        "singleFrame": False
         },
-        
-        "slide (out, crouch)": {
-            "image": pygame.image.load(animPath + "slide (out, crouch).png").convert_alpha(),
-            "currentFrame": 0,
-            "frames": 7,
-            "currentMidFrame": 0,
-            "lastMidFrame": 4,
-            "width": 1,
-            "height": 1,
-            "singleFrame": False
+    
+    "walk": {
+        "image": pygame.image.load(animPath + "walk.png").convert_alpha(),
+        "currentFrame": 0, 
+        "frames": 16, 
+        "currentMidFrame": 0, 
+        "lastMidFrame": 1, 
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
         },
-
-        "crouch": {
-            "image": pygame.image.load(animPath + "crouch.png").convert_alpha(),
-            "currentFrame": 0,
-            "frames": 1,
-            "currentMidFrame": 0,
-            "lastMidFrame": 1,
-            "width": 1,
-            "height": 1,
-            "singleFrame": True
+    
+    "idle": {
+        "image": pygame.image.load(animPath + "idle.png").convert_alpha(), 
+        "currentFrame": 0, 
+        "frames": 2, 
+        "currentMidFrame": 0, 
+        "lastMidFrame": FPS*2, 
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
         },
-
-        "crouch walk": {
-            "image": pygame.image.load(animPath + "crouch walk.png").convert_alpha(),
-            "currentFrame": 0,
-            "frames": 16,
-            "currentMidFrame": 0,
-            "lastMidFrame": 1,
-            "width": 1,
-            "height": 1,
-            "singleFrame": False
+    
+    "slide (in)": {
+        "image": pygame.image.load(animPath + "slide (in).png").convert_alpha(),
+        "currentFrame": 0,
+        "frames": 8, 
+        "currentMidFrame": 0, 
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1, 
+        "singleFrame": False
         },
-
-        "swing": {
-            "image": pygame.image.load(noImage).convert_alpha(),
-            "currentFrame": 0,
-            "frames": 8,
-            "currentMidFrame": 0,
-            "lastMidFrame": 1,
-            "width": 1,
-            "height": 1,
-            "singleFrame": True
+    
+    "slide (mid)": {
+        "image": pygame.image.load(animPath + "slide (mid).png").convert_alpha(),
+        "currentFrame": 0,
+        "frames": 3,
+        "currentMidFrame": 0,
+        "lastMidFrame": 0,
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
         },
+    
+    "slide (out, stand)": {
+        "image": pygame.image.load(animPath + "slide (out, stand).png").convert_alpha(),
+        "currentFrame": 0,
+        "frames": 8,
+        "currentMidFrame": 0,
+        "lastMidFrame": 3,
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
+    },
+    
+    "slide (out, crouch)": {
+        "image": pygame.image.load(animPath + "slide (out, crouch).png").convert_alpha(),
+        "currentFrame": 0,
+        "frames": 7,
+        "currentMidFrame": 0,
+        "lastMidFrame": 4,
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
+    },
 
-        "fall": {
-            "image": pygame.image.load(noImage).convert_alpha(),
-            "currentFrame": 0,
-            "frames": 1,
-            "currentMidFrame": 0,
-            "lastMidFrame": 1,
-            "width": 1,
-            "height": 1,
-            "singleFrame": True
-        },
+    "crouch": {
+        "image": pygame.image.load(animPath + "crouch.png").convert_alpha(),
+        "currentFrame": 0,
+        "frames": 1,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": True
+    },
 
-        "wallclimb": {
-            "image": pygame.image.load(noImage).convert_alpha(),
-            "currentFrame": 0,
-            "frames": 8,
-            "currentMidFrame": 0,
-            "lastMidFrame": 1,
-            "width": 1,
-            "height": 1,
-            "singleFrame": False
-        }
+    "crouch walk": {
+        "image": pygame.image.load(animPath + "crouch walk.png").convert_alpha(),
+        "currentFrame": 0,
+        "frames": 16,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
+    },
 
+    "swing": {
+        "image": pygame.image.load(noImage).convert_alpha(),
+        "currentFrame": 0,
+        "frames": 8,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": True
+    },
+
+    "fall": {
+        "image": pygame.image.load(noImage).convert_alpha(),
+        "currentFrame": 0,
+        "frames": 1,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": True
+    },
+
+    "wallclimb": {
+        "image": pygame.image.load(noImage).convert_alpha(),
+        "currentFrame": 0,
+        "frames": 8,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
+    },
+
+    "wallhang": {
+        "image": pygame.image.load(noImage).convert_alpha(),
+        "currentFrame": 0,
+        "frames": 0,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": False
+    },
+
+    "wallhang (reach)": {
+        "image": pygame.image.load(noImage).convert_alpha(),
+        "currentFrame": 0,
+        "frames": 0,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": True
     }
-    
-    tilePath = path + "images/tiles/";
-    toolPath = path + "images/tools/";
 
-    tileImgs = [
-    
-    0, # air
-    pygame.image.load(tilePath + "grass.png").convert_alpha(),
-    pygame.image.load(tilePath + "dirt.png").convert_alpha(),
-    pygame.image.load(tilePath + "stone.png").convert_alpha()
-    
-    ]
+}
 
-    toolImgs = [
-        pygame.image.load(toolPath + "multitool.png")
-    ]
+tilePath = path + "images/tiles/";
+toolPath = path + "images/tools/";
 
-    def fixImages():
-        transformImage("run",  0.28);
-        transformImage("walk", 0.255);
-        transformImage("idle", 0.255);
-        transformImage("slide (in)", 0.255);
-        transformImage("slide (mid)", 0.255);
-        transformImage("slide (out, stand)", 0.255);
-        transformImage("slide (out, crouch)", 0.255);
-        transformImage("crouch", 0.255);
-        transformImage("crouch walk", 0.255);
-        transformImage("wallclimb", 0.255);
-        transformImage("swing", 0.255);
-        transformImage("fall", 0.255);
-    fixImages();
+tileImgs = {
+
+"air": 0,
+"grass": pygame.image.load(tilePath + "grass.png").convert_alpha(),
+"dirt": pygame.image.load(tilePath + "dirt.png").convert_alpha(),
+"stone": pygame.image.load(tilePath + "stone.png").convert_alpha()
+
+}
+
+toolImgs = {
+    "multitool": pygame.image.load(toolPath + "multitool.png").convert_alpha()
+};
+
+def fixImages():
+    transformImage("run",  0.28);
+    transformImage("walk", 0.255);
+    transformImage("idle", 0.255);
+    transformImage("slide (in)", 0.255);
+    transformImage("slide (mid)", 0.255);
+    transformImage("slide (out, stand)", 0.255);
+    transformImage("slide (out, crouch)", 0.255);
+    transformImage("crouch", 0.255);
+    transformImage("crouch walk", 0.255);
+    transformImage("wallclimb", 0.255);
+    transformImage("swing", 0.255);
+    transformImage("fall", 0.255);
+fixImages();
     
 
 chunks = {}
@@ -264,15 +286,27 @@ def generateChunk (chunkPos) :
             
             #tileX is for adding like a beach or something once it go far enoghsiuus
             
-            tileType = 0; # air
-            if tileY == chunkSize: tileType = 1; # grass
-            if tileY > chunkSize: tileType = 2; # dirt
-            if tileY > chunkSize * 2:
-                if random.randint(1, int(100 / tileY) + 1) == 1: tileType = 3; # stone
-             # small chance for floating blocks
-            if random.randint(1, 1000) == 1 and tileY < chunkSize: tileType = random.randint(1, 3);
+            tileType = "air";
+            tileHardness = 0;
+
+            if tileY == chunkSize:
+                tileType = "grass";
+                tileHardness = 3;
             
-            tileData = [tileType];
+            if tileY > chunkSize: 
+                tileType = "dirt";
+                tileHardness = 2; 
+            
+            if tileY > chunkSize * 2:
+                if random.randint(1, int(100 / tileY) + 1) == 1:
+                    tileType = "stone";
+                    tileHardness = 6;
+            
+
+            tileData = {
+                "type": tileType, 
+                "hardness": tileHardness
+            };
             
             chunkData[(x, y)] = tileData;
             
@@ -280,42 +314,50 @@ def generateChunk (chunkPos) :
             
     
     chunks[chunkPos] = chunkData;
-    
 
-# item classes
-if useImage:
-    icons = {
-        "grass": pygame.Surface.copy(tileImgs[1]),
-        "dirt": pygame.Surface.copy(tileImgs[2]),
-        "stone": pygame.Surface.copy(tileImgs[3]),
-        "multitool": pygame.Surface.copy(toolImgs[0])
-    };
-    icons["multitool"] = pygame.transform.scale(icons["multitool"], (round(icons["multitool"].get_width() * 1.7), round(icons["multitool"].get_height() * 1.7)));
-else:
-    icons = {
-        "grass": [pygame.Rect.copy(tileImgs[1][0]), tileImgs[1][1]],
-        "dirt": [pygame.Rect.copy(tileImgs[2][0]), tileImgs[2][1]],
-        "stone": [pygame.Rect.copy(tileImgs[3][0]), tileImgs[3][1]]
-    };
-    for key, icon in icons.items():
-        pass # still resize, but not needed
+
+icons = {
+    "grass": pygame.Surface.copy(tileImgs["grass"]),
+    "dirt": pygame.Surface.copy(tileImgs["dirt"]),
+    "stone": pygame.Surface.copy(tileImgs["stone"]),
+    "multitool": pygame.Surface.copy(toolImgs["multitool"])
+};
+icons["multitool"] = pygame.transform.scale(icons["multitool"], (round(icons["multitool"].get_width() * 1.7), round(icons["multitool"].get_height() * 1.7)));
+
 
 class tileItem ():
-    def __init__(this, data = [1], icon = "grass"):
+    def __init__(this, data = {"type": "grass", "hardness": 3}):
         this.data = data;
-        this.icon = icons[icon];
+        this.icon = icons[this.data["type"]];
 
     def use(this):
             testChunk((mouse.x, mouse.y));
             chunkPos = getChunkPos(mouse.x, mouse.y);
             tilePos = getTilePos(mouse.x, mouse.y, True);
 
-            if chunks[chunkPos][tilePos] == [0]: pass # normally place tile, otherwise blockswap and drop other tile
-            chunks[chunkPos][tilePos] = this.data;
+            tile = chunks[chunkPos][tilePos];
+            noPlacementRect = pygame.Rect(player.tilePos[0], player.tilePos[1], player.width, player.height);
 
+            if not noPlacementRect.collidepoint(mouse.x, mouse.y):
+                
+                tileOnLeft = getTile(mouse.x - tileSize, mouse.y);
+                tileOnRight = getTile(mouse.x + tileSize, mouse.y);
+                tileOnTop  = getTile(mouse.x, mouse.y - tileSize);
+                tileOnBottom = getTile(mouse.x, mouse.y + tileSize);
+                allowPlace = False;
+
+                if tileOnLeft or tileOnRight or tileOnTop or tileOnBottom:
+                    allowPlace = True;
+
+                if allowPlace:
+                    if tile["type"] == "air":
+                        chunks[chunkPos][tilePos] = this.data;
+                
 class toolItem ():
-    def __init__(this, breakType = "all", icon = "multitool"):
+    def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool"):
         this.breakType = breakType;
+        this.breakPower = breakPower;
+        this.useTime = useTime;
         this.icon = icons[icon];
 
     def use(this):
@@ -326,24 +368,44 @@ class toolItem ():
             chunkPos = getChunkPos(mouse.x, mouse.y);
             tilePos = getTilePos(mouse.x, mouse.y, True);
 
-            if chunks[chunkPos][tilePos] != [0]:
-                otherTilePos = getTilePos(mouse.x, mouse.y);
-                spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = chunks[chunkPos][tilePos][0]);
+            if player.breakingTilePos == "none":
+                player.breakingTilePos = getTilePos(mouse.x, mouse.y);
+                player.breakProgress = 0;
+            
+            if player.breakingTilePos != getTilePos(mouse.x, mouse.y):
+                player.breakingTilePos = "none";
+                player.breakProgress = 0;
 
-            chunks[chunkPos][tilePos] = [0];
+            tile = chunks[chunkPos][tilePos];
+
+            if tile["type"] != "air":
+                otherTilePos = getTilePos(mouse.x, mouse.y);
+                x = otherTilePos[0];
+                y = otherTilePos[1];
+
+                player.breakProgress += this.breakPower;
+                player.useTime = this.useTime;
+
+                if tile["type"] == "grass":
+                    chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                
+                if player.breakProgress >= tile["hardness"]:
+                    spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
+                    chunks[chunkPos][tilePos] = {"type": "air", "hardness": 0};
+                    player.breakProgress = 0;
+                    player.breakingTilePos = "none";
 
 #class meleeItem ():
 
 #class rangedItem ():
 
-items = [
-    0,
-    tileItem([1], "grass"),
-    tileItem([2], "dirt"),
-    tileItem([3], "stone"),
+items = {
+    "grass": tileItem({"type": "grass", "hardness": 3}),
+    "dirt": tileItem({"type": "dirt", "hardness": 2}),
+    "stone": tileItem({"type": "stone", "hardness": 6}),
     
-    toolItem()
-]
+    "multitool": toolItem()
+}
 
 class Mouse:
     def __init__(mouse):
@@ -355,6 +417,7 @@ class Mouse:
         mouse.down = False;
         mouse.button = 1;
         mouse.pressed = False;
+        mouse.pos = (0, 0);
 
         mouse.offsetX = 0;
         mouse.offsetY = 0;
@@ -426,8 +489,8 @@ class Player ():
         
         this.hotbar = Hotbar();
 
-        this.hotbar.slotContents[0] = items[1];
-        this.hotbar.slotContents[1] = items[4];
+        this.hotbar.slotContents[0] = items["dirt"];
+        this.hotbar.slotContents[1] = items["multitool"];
 
         this.hotbar.slot = 0;
         this.inventory = {
@@ -444,6 +507,8 @@ class Player ():
         }
 
         this.useTime = 0;
+        this.breakProgress = 0;
+        this.breakingTilePos = 0; # will be "getTile" later
         
 class Grapple () :
     def __init__(this):
@@ -552,7 +617,7 @@ class Camera():
         this.py = 0;
 
 class itemEntity():
-    def __init__(this, x = 0, y = 0, xv = 0, yv = 0, id = 1):
+    def __init__(this, x = 0, y = 0, xv = 0, yv = 0, id = "dirt"):
 
         this.x = x;
         this.y = y;
@@ -561,7 +626,7 @@ class itemEntity():
         this.yv = yv;
 
         this.data = items[id];
-        this.itemId = id;
+
         
         this.image = this.data.icon;
         this.rect = pygame.Rect(0, 0, tileSize, tileSize);
@@ -614,6 +679,7 @@ def getTile (x, y, otherInfo = False) :
     x = math.floor(x/tileSize);
     y = math.floor(y/tileSize);
     
+
     if x < 0: 
         while x < 0: x += chunkSize;
     if y < 0:
@@ -622,18 +688,19 @@ def getTile (x, y, otherInfo = False) :
         while x > chunkSize: x -= chunkSize;
     if y > chunkSize: 
         while y > chunkSize: y -= chunkSize;
-        
+    
+
     tileX = int(str(x)[-1]);
     tileY = int(str(y)[-1]);
     
     testChunk(chunkPos);
     tile = chunks[chunkPos][(tileX, tileY)];
-    # if testChunk returns true, tile = thing
-        
-    data = tile[0];
-    
+
+
+    if tile["type"] == "air": data = False;
+    else: data = True;
+
     if otherInfo: data = tile;
-    
     
     return data;
 
@@ -816,13 +883,6 @@ def playerFrame () :
                 else: grapple.unhook();
     
     inventoryStuff();
-
-    player.state = player.anim;
-    if player.state == "slide (in)" or player.state == "slide (mid)" or player.state == "slide (out, crouch)" or player.state == "slide (out, stand)":
-        player.state = "slide";
-    if player.state == "crouch" or player.state == "crouch walk":
-        player.state = "crouch";
-        
         
     def unstuckPlayerX () :
     
@@ -835,6 +895,7 @@ def playerFrame () :
         if player.xv < 0 and player.tiles.left:
             player.xv = 0;
             player.x = player.tilePos[0];
+    
     def unstuckPlayerY ():
 
         if player.tiles.bottom:
@@ -940,10 +1001,13 @@ def playerFrame () :
                  # do animation checks
                 if player.xv == 0:
                     player.anim = "idle";
+                    player.state = player.anim;
                 elif abs(player.xv) > player.maxXV / 2: 
                     player.anim = "run";
+                    player.state = player.anim;
                 else:
                     player.anim = "walk";
+                    player.state = player.anim;
             else:
                 if up:
                     # wallclimb
@@ -986,6 +1050,7 @@ def playerFrame () :
             if player.state == "slide":
                 def unslide():
                     player.anim = "idle";
+                    player.state = player.anim;
                     player.y -= player.width;
                     player.height = player.width * 2;
 
@@ -1002,6 +1067,7 @@ def playerFrame () :
                         unslide();
                     elif player.tiles.top:
                         player.anim = "crouch";
+                        player.state = player.anim;
         doSlideThings();
 
         def doCrouchThings():
@@ -1025,12 +1091,11 @@ def playerFrame () :
                         player.flipH = False;
 
                 if not player.tiles.top and not down:
-                    uncrouch()
-                
+                    uncrouch()        
         doCrouchThings();
 
         def doWallclimb():
-            if player.state == "wallclimb" or player.state == "grab" or player.state == "climb up":
+            if player.state == "wallclimb" or player.state == "climb up":
 
                 def jumpOff(XV):
                     player.lockX = False;
@@ -1043,11 +1108,15 @@ def playerFrame () :
                 if player.tiles.right:
 
                     grabby = getTile(player.x + tileSize, player.y);
-                    
+                    player.flipH = False;
                     
                     if not grabby:
                         player.yv = 0;
-                        #player.anim == "grab";
+                        player.anim = "wallhang";
+                        
+
+                        if left: 
+                            player.anim = "wallhang (reach)";
 
                     if space:
                         if left: jumpOff(-3);
@@ -1058,10 +1127,15 @@ def playerFrame () :
                 if player.tiles.left:
 
                     grabby = getTile(player.x - tileSize, player.y);
+                    player.flipH = True;
 
                     if not grabby:
                         player.yv = 0;
-                        #player.anim == "grab";
+                        player.anim = "wallhang";
+                        
+
+                        if right:
+                            player.anim = "wallhang (reach)";
 
                     if space:
                         if right: jumpOff(3);
@@ -1078,7 +1152,6 @@ def playerFrame () :
                 if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
-        
         doWallclimb();
 
     
@@ -1129,10 +1202,6 @@ def playerFrame () :
     playerTimers();
 
     anim = player.image[player.anim];
-    if player.anim == "slide (in)" or player.anim == "slide (mid)" or player.anim == "slide (out, crouch)" or player.anim == "slide (out, stand)":
-        player.state = "slide";
-    if player.anim == "crouch" or player.anim == "crouch walk":
-        player.state = "crouch";
     
     def updateAnimation():
         if not anim["singleFrame"]:
@@ -1160,46 +1229,49 @@ def playerFrame () :
             
                 
     def animate () :
-        if useImage:
-            
-            num = 7;
-            num2 = 3;
+    
+        
+        num = 7;
+        num2 = 3;
 
-            def fixPlayerRenderPosition():
-                if player.anim == "run":
-                    if player.xv > 0: num = -15;
-                    else: num = -2;
-                if player.state == "slide":
-                    num2 = -tileSize + 3;
-                    num = -tileSize/2;
-                    if player.anim != "slide (in)":
-                        num2 = 0;
-                if player.state == "crouch":
-                    num2 = -4;
-                    if player.anim == "crouch":
-                        num2 = -3;
-            fixPlayerRenderPosition();
+        
+        if player.anim == "run":
+            num = -15;
+        
+        if player.state == "slide":
+            num2 = -tileSize + 3;
+            num = -tileSize/2;
+            if player.anim == "slide (mid)":
+                num2 = 3;
+            if player.anim == "slide (out, stand)":
+                num2 += 6;
+        
+        if player.state == "crouch":
+            num2 = -4;
+            if player.anim == "crouch":
+                num2 = -3;
+       
 
-            animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
+        animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
 
-            image = anim["image"];
+        image = anim["image"];
 
-            image = pygame.Surface.subsurface(image, animRect);
+        image = pygame.Surface.subsurface(image, animRect);
 
-            if player.flipH:
-                image = pygame.transform.flip(image, True, False);
-            
-            tilt = -player.xv / 2;
-            
-            if player.flipH: tilt -= player.yv;
-            else: tilt += player.yv;
-            
-            image = pygame.transform.rotate(image, player.angle + tilt);
-            coords = (round (player.x - camera.x + num), round (player.y - camera.y + num2));
+        if player.flipH:
+            image = pygame.transform.flip(image, True, False);
+        
+        tilt = -player.xv / 2;
+        
+        if player.flipH: tilt -= player.yv;
+        else: tilt += player.yv;
+        
+        image = pygame.transform.rotate(image, player.angle + tilt);
+        coords = (round (player.x - camera.x + num), round (player.y - camera.y + num2));
 
-            screen.blit(image, coords);
-            
-            updateAnimation();
+        screen.blit(image, coords);
+        
+        updateAnimation();
     animate();
     
     
@@ -1240,8 +1312,6 @@ def groundItemsFrame(this):
     screen.blit(this.image, coord);
 
 
-
-
 def renderTiles (chunkPos) :
     
     chunkList = [];
@@ -1266,7 +1336,7 @@ def renderTiles (chunkPos) :
     
     for chunk in chunkList:
         for tilePos, tile in chunk.items():
-            if not tile[0] == 0:
+            if tile["type"] != "air":
                 
                 xpos = int(tilePos[0]);
                 ypos = int(tilePos[1]);
@@ -1289,13 +1359,9 @@ def renderTiles (chunkPos) :
                 renderY = y - camera.y;
                 
                 if screenRect.collidepoint(renderX, renderY):
-                
-                    if useImage: 
-                        screen.blit(tileImgs[tile[0]], (renderX, renderY));
-                    else: 
-                        tileImgs[tile[0]][0].x = renderX;
-                        tileImgs[tile[0]][0].y = renderY;
-                        pygame.draw.rect(screen, tileImgs[tile[0]][1], tileImgs[tile[0]][0]);
+                        
+                    screen.blit(tileImgs[tile["type"]], (renderX, renderY));
+                    
                         
         currentChunk += 1;
               
@@ -1314,16 +1380,15 @@ while running: # game loop
     
     mouse.x = mouse.absX + camera.x;
     mouse.y = mouse.absY + camera.y;
+    mouse.pos = (mouse.x, mouse.y);
     
-    cameraChunk = getChunkPos(int(player.x - sW/2 + camera.offsetX), int(player.y - sH/2 + camera.offsetY));
+    cameraChunk = getChunkPos(camera.x, camera.y);
     
     renderTiles(cameraChunk);
 
     playerFrame();
     if len(groundItems) > 400:
-        groundItems.reverse();
-        groundItems.pop();
-        groundItems.reverse();
+        groundItems.remove(0);
     i = len(groundItems) - 1;
     while i > -1:
         item = groundItems[i];
