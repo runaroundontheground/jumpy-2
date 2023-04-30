@@ -213,7 +213,7 @@ stickAnim = {
 
 tilePath = path + "images/tiles/";
 toolPath = path + "images/tools/";
-
+#
 tileImgs = {
 
 "air": 0,
