@@ -368,7 +368,7 @@ class tileItem ():
                         chunks[chunkPos][tilePos] = this.data;
                 
 class toolItem ():
-    def __init__(this, breakType = "all", breakPower = 1, useTime = 5, icon = "multitool"):
+    def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool"):
 
         this.breakType = breakType;
         this.breakPower = breakPower;
@@ -422,7 +422,11 @@ class toolItem ():
                         player.breakProgress = 0;
                         player.breakingTilePos = "none";
 
-#class meleeItem ():
+class meleeItem ():
+    def __init__(this, damage = 3, attackRange = 2):
+        this.damage = damage;
+        this.attackRange = attackRange;
+        
 
 #class rangedItem ():
 
@@ -431,7 +435,10 @@ items = {
     "dirt": tileItem({"type": "dirt", "hardness": 2}),
     "stone": tileItem({"type": "stone", "hardness": 6}),
     
-    "multitool": toolItem()
+    "multitool": toolItem("all", 0.5, 5, "multitool"),
+    "epic sword": meleeItem(5, 2, ),
+    "crappy pickaxe": toolItem("not wood", 0.5, 5, "crappy axe"),
+    "crappy axe": toolItem("wood", 0.5, 5, "crappy axe")
 }
 
 class Mouse:
