@@ -38,6 +38,7 @@ brown = pygame.Color("brown");
 gray = pygame.Color("gray");
 yellow = pygame.Color("yellow");
 blue = pygame.Color("blue");
+white = pygame.Color("white");
 
 tileSize = 30;
 screenRect.x = -tileSize;
@@ -50,23 +51,7 @@ screenRect.height += tileSize;
 animPath = path + "animations/player (no item)/";
 noImage = path + "animations/unfinished/tpose.png";
 
-def transformImage (animation, scale) :
 
-    data = stickAnim[animation];
-
-    width = data["image"].get_width();
-    height = data["image"].get_height();
-
-    if data["image"] == noImage: 
-        print("it's tpose?");
-
-    data["image"] = pygame.transform.scale(data["image"], (round(width * scale), round(height * scale)));
-
-    if not data["image"] == noImage:
-        data["width"] = data["image"].get_width() / data["frames"];
-        data["height"] = data["image"].get_height();
-    
-    stickAnim[animation] = data;
 
 stickAnim = {
     
@@ -242,7 +227,32 @@ toolImgs = {
     "multitool": pygame.image.load(toolPath + "multitool.png").convert_alpha()
 };
 
-def fixImages():
+crackImgs = {
+    "light": pygame.image.load(path + "images/cracks/light.png").convert_alpha(),
+    "medium": pygame.image.load(path + "images/cracks/medium.png").convert_alpha(),
+    "heavy": pygame.image.load(path + "images/cracks/heavy.png").convert_alpha()
+};
+
+def updateImages():
+
+    def transformImage (animation, scale) :
+
+        data = stickAnim[animation];
+
+        width = data["image"].get_width();
+        height = data["image"].get_height();
+
+        if data["image"] == noImage: 
+            print("it's tpose?");
+
+        data["image"] = pygame.transform.scale(data["image"], (round(width * scale), round(height * scale)));
+
+        if not data["image"] == noImage:
+            data["width"] = data["image"].get_width() / data["frames"];
+            data["height"] = data["image"].get_height();
+        
+        stickAnim[animation] = data;
+
     transformImage("run",  0.28);
     transformImage("walk", 0.255);
     transformImage("idle", 0.255);
@@ -255,7 +265,11 @@ def fixImages():
     transformImage("wallclimb", 0.255);
     transformImage("swing", 0.255);
     transformImage("fall", 0.255);
-fixImages();
+
+    for dict, image in crackImgs.items():
+        image.fill(white, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
+        
+updateImages();
     
 
 chunks = {}
@@ -354,7 +368,8 @@ class tileItem ():
                         chunks[chunkPos][tilePos] = this.data;
                 
 class toolItem ():
-    def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool"):
+    def __init__(this, breakType = "all", breakPower = 1, useTime = 5, icon = "multitool"):
+
         this.breakType = breakType;
         this.breakPower = breakPower;
         this.useTime = useTime;
@@ -363,8 +378,9 @@ class toolItem ():
     def use(this):
         
         if mouse.button == 1:
-            if True: pass;
+            
             testChunk((mouse.x, mouse.y));
+
             chunkPos = getChunkPos(mouse.x, mouse.y);
             tilePos = getTilePos(mouse.x, mouse.y, True);
 
@@ -383,17 +399,28 @@ class toolItem ():
                 x = otherTilePos[0];
                 y = otherTilePos[1];
 
-                player.breakProgress += this.breakPower;
-                player.useTime = this.useTime;
-
-                if tile["type"] == "grass":
-                    chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                totalBreakProgress = player.breakProgress / tile["hardness"];
+                pos = (int(x - camera.x), int(y - camera.y));
                 
-                if player.breakProgress >= tile["hardness"]:
-                    spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
-                    chunks[chunkPos][tilePos] = {"type": "air", "hardness": 0};
-                    player.breakProgress = 0;
-                    player.breakingTilePos = "none";
+                if totalBreakProgress > 0.66:
+                    screen.blit(crackImgs["heavy"], pos);
+                elif totalBreakProgress > 0.33:
+                    screen.blit(crackImgs["medium"], pos);
+                else:
+                    screen.blit(crackImgs["light"], pos);
+                
+                if player.useTime == 0:
+                    player.breakProgress += this.breakPower;
+                    player.useTime = this.useTime;
+
+                    if tile["type"] == "grass":
+                        chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                    
+                    if player.breakProgress >= tile["hardness"]:
+                        spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
+                        chunks[chunkPos][tilePos] = {"type": "air", "hardness": 0};
+                        player.breakProgress = 0;
+                        player.breakingTilePos = "none";
 
 #class meleeItem ():
 
@@ -836,13 +863,11 @@ def playerFrame () :
 
 
             item = player.hotbar.slotContents[hotbarSlot];
+
             if item != "none":
-                if useImage:
-                    screen.blit(item.icon, hotbarRect);
-                else:
-                    x = hotbarRect.x + item.icon[0].width/2;
-                    y = hotbarRect.y + item.icon[0].height/2;
-                    pygame.draw.rect(screen, item.icon[1], (x, y, item.icon[0].width, item.icon[0].height));
+                
+                screen.blit(item.icon, hotbarRect);
+                
             hotbarRect.x += hotbarRect.width + 3;
         
         for hotbarSlot in range(5):
