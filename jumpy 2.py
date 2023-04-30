@@ -1325,11 +1325,10 @@ while running: # game loop
         groundItems.pop();
         groundItems.reverse();
     i = len(groundItems) - 1;
-    while i > 0:
+    while i > -1:
         item = groundItems[i];
         groundItemsFrame(item);
         i -= 1;
-    
     
     
     updateCamera();
