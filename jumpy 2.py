@@ -178,9 +178,9 @@ stickAnim = {
     },
 
     "wallclimb": {
-        "image": pygame.image.load(noImage).convert_alpha(),
+        "image": pygame.image.load(animPath + "wallclimb.png").convert_alpha(),
         "currentFrame": 0,
-        "frames": 8,
+        "frames": 14,
         "currentMidFrame": 0,
         "lastMidFrame": 1,
         "width": 1,
@@ -189,7 +189,7 @@ stickAnim = {
     },
 
     "wallhang": {
-        "image": pygame.image.load(noImage).convert_alpha(),
+        "image": pygame.image.load(animPath + "wallhang.png").convert_alpha(),
         "currentFrame": 0,
         "frames": 0,
         "currentMidFrame": 0,
@@ -200,7 +200,7 @@ stickAnim = {
     },
 
     "wallhang (reach)": {
-        "image": pygame.image.load(noImage).convert_alpha(),
+        "image": pygame.image.load(animPath + "wallhang (reach).png").convert_alpha(),
         "currentFrame": 0,
         "frames": 0,
         "currentMidFrame": 0,
