@@ -39,6 +39,7 @@ gray = pygame.Color("gray");
 yellow = pygame.Color("yellow");
 blue = pygame.Color("blue");
 white = pygame.Color("white");
+purple = pygame.Color("purple");
 
 tileSize = 30;
 screenRect.x = -tileSize;
@@ -207,6 +208,17 @@ stickAnim = {
         "width": 1,
         "height": 1,
         "singleFrame": True
+    },
+
+    "climb up": {
+        "image": pygame.image.load(noImage).convert_alpha(),
+        "currentFrame": 0,
+        "frames": 0,
+        "currentMidFrame": 0,
+        "lastMidFrame": 1,
+        "width": 1,
+        "height": 1,
+        "singleFrame": True
     }
 
 }
@@ -266,12 +278,12 @@ def updateImages():
     transformImage("slide (out, crouch)", 0.255);
     transformImage("crouch", 0.255);
     transformImage("crouch walk", 0.255);
-    transformImage("wallclimb", 0.255);
-    transformImage("swing", 0.255);
-    transformImage("fall", 0.255);
+    transformImage("wallclimb", 1);
+    transformImage("swing", 1);
+    transformImage("fall", 1);
 
     for dict, image in crackImgs.items():
-        image.fill(white, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
+        image.fill(orange, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
         
 updateImages();
     
@@ -342,7 +354,10 @@ icons = {
     "katana": pygame.Surface.copy(meleeImgs["katana"])
 };
 icons["multitool"] = pygame.transform.scale(icons["multitool"], (round(icons["multitool"].get_width() * 1.7), round(icons["multitool"].get_height() * 1.7)));
-
+for key, icon in icons.items():
+    width = int(icon.get_width() / 1.5);
+    height = int(icon.get_height() / 1.5);
+    pygame.transform.scale(icon, (width, height));
 
 class tileItem ():
     def __init__(this, data = {"type": "grass", "hardness": 3}):
@@ -355,8 +370,12 @@ class tileItem ():
             tilePos = getTilePos(mouse.x, mouse.y, True);
 
             tile = chunks[chunkPos][tilePos];
-            noPlacementRect = pygame.Rect(player.tilePos[0], player.tilePos[1], player.width, player.height);
+            rectPos = getTilePos(player.x, player.y);
+            noPlacementRect = pygame.Rect(rectPos[0], rectPos[1], player.width, player.height);
 
+            if player.x > rectPos[0]:
+                noPlacementRect.width += tileSize;
+                
             if not noPlacementRect.collidepoint(mouse.x, mouse.y):
                 
                 tileOnLeft = getTile(mouse.x - tileSize, mouse.y);
@@ -371,7 +390,10 @@ class tileItem ():
                 if allowPlace:
                     if tile["type"] == "air":
                         chunks[chunkPos][tilePos] = this.data;
-                
+
+    def handRender(this):
+        pass
+
 class toolItem ():
     def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool"):
 
@@ -427,11 +449,79 @@ class toolItem ():
                         player.breakProgress = 0;
                         player.breakingTilePos = "none";
 
+    def handRender(this):
+        pass
+
 class meleeItem ():
-    def __init__(this, damage = 3, attackRange = 2):
+    def __init__(this, damage = 3, attackRange = 2, icon = "katana", imgPath = path + "animations/katana (in hand).png"):
         this.damage = damage;
         this.attackRange = attackRange;
         this.attackAngle = 90;
+        this.icon = icons[icon];
+        this.image = pygame.image.load(imgPath);
+        this.angle = 0;
+        scale = 3;
+        this.image = pygame.transform.scale(this.image, (int(this.image.get_width() / scale), int(this.image.get_height() / scale)));
+        
+        this.animData = {
+            "frames": 11,
+            "currentFrame": 0,
+            "midFrames": 3,
+            "currentMidFrame": 0,
+            "width": this.image.get_width() / 11,
+            "height": this.image.get_height()
+        }
+
+        
+    
+    def use(this):
+       
+        x = int(this.animData["width"] * this.animData["currentFrame"]);
+       
+        drawRect = (x, 0, this.animData["width"], this.animData["height"]);
+
+        pos = (int(player.x - camera.x - 34), int(player.y - camera.y - 20));
+
+        dx = player.x - mouse.x;
+        dy = player.y - mouse.y;
+
+        this.angle = round(math.degrees(math.atan2(-dy, dx)));
+        if this.angle > -90 and this.angle < 90: player.flipH = True; flipV = False;
+        else: player.flipH = False; flipV = True;
+
+        pygame.draw.line(screen, purple, (player.x - camera.x, player.y - camera.y), (mouse.absX, mouse.absY))
+        
+        newImage = pygame.Surface.subsurface(this.image, drawRect);
+        
+        rect = (
+            pos[0],
+            pos[1],
+            newImage.get_width(),
+            newImage.get_height()
+        )
+        pygame.draw.rect(screen, purple, rect, 1)
+  
+        
+       
+        newImage = pygame.transform.flip(newImage, True, False);
+        if flipV: newImage = pygame.transform.flip(newImage, False, True);
+        newImage = pygame.transform.rotate(newImage, this.angle);
+        print(this.angle)
+        
+        this.animData["currentMidFrame"] += 1;
+
+        if this.animData["currentMidFrame"] >= this.animData["midFrames"]:
+            this.animData["currentFrame"] += 1;
+            this.animData["currentMidFrame"] = 0;
+            if this.animData["currentFrame"] >= this.animData["frames"]:
+                this.animData["currentFrame"] = 0;
+
+        screen.blit(newImage, pos);
+
+    def handRender(this):
+        
+        pos = (int(player.x - camera.x), int(player.y - camera.y));
+        screen.blit(this.icon, pos);
         
 
 #class rangedItem ():
@@ -442,9 +532,9 @@ items = {
     "stone": tileItem({"type": "stone", "hardness": 6}),
     
     "multitool": toolItem("all", 0.5, 5, "multitool"),
-    "epic sword": meleeItem(5, 2, ),
-    "crappy pickaxe": toolItem("not wood", 0.5, 5, "crappy axe"),
-    "crappy axe": toolItem("wood", 0.5, 5, "crappy axe")
+    "epic sword": meleeItem(5, 2)
+    #"crappy pickaxe": toolItem({"not wood", 0.5, 5, "crappy pickaxe"}),
+    #"crappy axe": toolItem({"wood", 0.5, 5, "crappy axe"})
 }
 
 class Mouse:
@@ -494,6 +584,7 @@ class Player ():
 
         this.rect = pygame.Rect(0, 0, 0, 0);
         this.meleeRect = pygame.Rect(0, 0, 0, 0);
+        this.allowDebugRects = False;
         
         this.jumpPower = -5; # normal -5
         this.maxXV = 8; # normal 8
@@ -530,8 +621,10 @@ class Player ():
         
         this.hotbar = Hotbar();
 
-        this.hotbar.slotContents[0] = items["dirt"];
+        this.hotbar.slotContents[3] = items["dirt"];
         this.hotbar.slotContents[1] = items["multitool"];
+        this.hotbar.slotContents[2] = items["stone"];
+        this.hotbar.slotContents[0] = items["epic sword"];
 
         this.hotbar.slot = 0;
         this.inventory = {
@@ -851,9 +944,14 @@ def playerFrame () :
         hotbarRect.y = 50;
 
         item = player.hotbar.slotContents[player.hotbar.slot];
-        
-        if mouse.down and mouse.button == 1 and item != "none":
-            item.use();
+
+        if item != "none":
+            
+            if mouse.down and mouse.button == 1:
+                item.use();
+            else:
+                item.handRender();
+            
                 
         def drawAndUpdateX(hotbarSlot):
 
@@ -1020,7 +1118,7 @@ def playerFrame () :
         
         
     if not grapple.hooked:
-        if not player.state == "slide" and not player.state == "crouch":
+        if player.state != "slide" and player.state != "crouch" and player.state != "wallclimb":
             
             accel = player.accel * timeScale;
             
@@ -1056,6 +1154,7 @@ def playerFrame () :
                         if player.tiles.right or player.tiles.left:
                             player.lockX = True;
                             player.anim = "wallclimb";
+                            player.state = player.anim;
                             player.abilitesUsed["wallclimb"] = True;
                             player.yv = player.jumpPower * 1.5;
                 # walljump
@@ -1116,6 +1215,7 @@ def playerFrame () :
 
                 def uncrouch():    
                     player.anim = "idle";
+                    player.state = "idle";
                     player.height = tileSize * 2;
                     player.y -= tileSize;
                 
@@ -1134,15 +1234,16 @@ def playerFrame () :
                 if not player.tiles.top and not down:
                     uncrouch()        
         doCrouchThings();
-
+        
         def doWallclimb():
             if player.state == "wallclimb" or player.state == "climb up":
-
+                
                 def jumpOff(XV):
                     player.lockX = False;
                     player.xv = XV;
                     player.yv = player.jumpPower;
                     player.abilitesUsed["wallclimb"] = False;
+                    player.state = "run";
                 
                 grabby = False;
 
@@ -1195,39 +1296,32 @@ def playerFrame () :
                     player.abilitesUsed["wallclimb"] = False;
         doWallclimb();
 
-    
-
-
-
-
 
     unstuckPlayerX();
     
-    
-
     def playerDebug () :
         global timeScale;
         
-    
+
         player.rect.x -= camera.x;
         player.rect.y -= camera.y;
         
-        
+        if player.allowDebugRects:
 
-        pygame.draw.rect(screen, green, player.rect);
-        
-        if player.tiles.bottom:
-            bottomRect = pygame.Rect(player.tilePos[0] - camera.x, player.tilePos[1] - camera.y + tileSize * 2, tileSize, tileSize);
-            pygame.draw.rect(screen, yellow, bottomRect);
-        if player.tiles.top:
-            topRect = pygame.Rect(player.tilePos[0] - camera.x, player.tilePos[1] - camera.y - tileSize, tileSize, tileSize);
-            pygame.draw.rect(screen, blue, topRect);
-        if player.tiles.left:
-            leftRect = pygame.Rect(player.tilePos[0] - camera.x - tileSize, player.tilePos[1] - camera.y, tileSize, tileSize);
-            pygame.draw.rect(screen, orange, leftRect);
-        if player.tiles.right:
-            rightRect = pygame.Rect(player.tilePos[0] - camera.x + tileSize, player.tilePos[1] - camera.y, tileSize, tileSize);
-            pygame.draw.rect(screen, red, rightRect);
+            pygame.draw.rect(screen, green, player.rect);
+            
+            if player.tiles.bottom:
+                bottomRect = pygame.Rect(player.tilePos[0] - camera.x, player.tilePos[1] - camera.y + tileSize * 2, tileSize, tileSize);
+                pygame.draw.rect(screen, yellow, bottomRect);
+            if player.tiles.top:
+                topRect = pygame.Rect(player.tilePos[0] - camera.x, player.tilePos[1] - camera.y - tileSize, tileSize, tileSize);
+                pygame.draw.rect(screen, blue, topRect);
+            if player.tiles.left:
+                leftRect = pygame.Rect(player.tilePos[0] - camera.x - tileSize, player.tilePos[1] - camera.y, tileSize, tileSize);
+                pygame.draw.rect(screen, orange, leftRect);
+            if player.tiles.right:
+                rightRect = pygame.Rect(player.tilePos[0] - camera.x + tileSize, player.tilePos[1] - camera.y, tileSize, tileSize);
+                pygame.draw.rect(screen, red, rightRect);
         
         
         player.rect.x += camera.x;
@@ -1235,6 +1329,9 @@ def playerFrame () :
             
         if keys[pygame.K_i]: timeScale = 0.1;
         if keys[pygame.K_o]: timeScale = 1.0;
+        if keys[pygame.K_g]: player.allowDebugRects = True;
+        if keys[pygame.K_h]: player.allowDebugRects = False;
+
     playerDebug();
     
     def playerTimers():
@@ -1286,11 +1383,11 @@ def playerFrame () :
                 num2 = 3;
             if player.anim == "slide (out, stand)":
                 num2 += 6;
+            if player.anim == "slide (out, crouch)":
+                num2 = 20;
         
         if player.state == "crouch":
-            num2 = -4;
-            if player.anim == "crouch":
-                num2 = -3;
+            num2 = 5;
        
 
         animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
