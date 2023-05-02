@@ -1,2 +1,0 @@
-def doDaTest():
-    print("TESTTTTTTT")
