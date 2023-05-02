@@ -1,14 +1,31 @@
 import pygame, math, sys, random, os, time;
+from testingFile import *
 
 pygame.init();
 
-sW, sH = 1200, 800; # normally 600, 400
 
-screen = pygame.display.set_mode((sW, sH));
-screenRect = pygame.Rect(0, 0, sW, sH);
+
+
+screenWidth, screenHeight = 1200, 800; # normally 600, 400
+
+tileSize = 30;
+chunks = {}
+chunkSize = 10;
+
+totalChunkSize = chunkSize * tileSize;
+
+screenChunks = [1, 1];
+ # calculate how many chunks should be on screen (width, height)
+screenChunks[0] = math.ceil(screenWidth / totalChunkSize); # normally add 2 to each, but just in case
+screenChunks[1] = math.ceil(screenHeight / totalChunkSize); # for testing don't rn
+
+screen = pygame.display.set_mode((screenWidth, screenHeight));
+screenRect = pygame.Rect(-tileSize, -tileSize, screenWidth + tileSize, screenHeight + tileSize);
+
 clock = pygame.time.Clock();
 
 hotbarRect = pygame.Rect(0, 0, 50, 50);
+
 if os.path.exists("C:/jumpy 2 stuff"):
     path = "C:/jumpy 2 stuff/";
     useImage = True;
@@ -21,7 +38,7 @@ else:
 
 FPS = 60;
 timeScale = 1.0;
-gravity = 0.3;
+gravity = 0.3; # normal 0.3
 
 enemies = [];
 projectiles = [];
@@ -42,19 +59,17 @@ blue = pygame.Color("blue");
 white = pygame.Color("white");
 purple = pygame.Color("purple");
 
-tileSize = 30;
-screenRect.x = -tileSize;
-screenRect.y = -tileSize;
-screenRect.width += tileSize;
-screenRect.height += tileSize;
+
     
 
-
-
-
 stickAnim = {};
+tileImgs = {};
+toolImgs = {};
+meleeImgs = {};
+crackImgs = {};
 
-def createPlayerAnimations():
+
+def loadPlayerAnims():
     global stickAnim;
 
     animPath = path + "animations/player/player (no item)/";
@@ -278,48 +293,39 @@ def createPlayerAnimations():
 
     }
 """
-tilePath = path + "images/tiles/";
-toolPath = path + "images/tools/";
+loadPlayerAnims();
 
-tileImgs = {
+def loadOtherImages():
+    global tileImgs, toolImgs, meleeImgs, crackImgs;
 
-"air": 0,
-"grass": pygame.image.load(tilePath + "grass.png").convert_alpha(),
-"dirt": pygame.image.load(tilePath + "dirt.png").convert_alpha(),
-"stone": pygame.image.load(tilePath + "stone.png").convert_alpha()
+    tilePath = path + "images/tiles/";
+    toolPath = path + "images/tools/";
 
-}
+    tileImgs = {
 
-toolImgs = {
-    "multitool": pygame.image.load(toolPath + "multitool.png").convert_alpha()
-};
+    "air": 0,
+    "grass": pygame.image.load(tilePath + "grass.png").convert_alpha(),
+    "dirt": pygame.image.load(tilePath + "dirt.png").convert_alpha(),
+    "stone": pygame.image.load(tilePath + "stone.png").convert_alpha()
 
-meleeImgs = {
-    "katana": pygame.image.load(path + "images/melee/katana.png")
-}
+    }
 
-crackImgs = {
-    "light": pygame.image.load(path + "images/cracks/light.png").convert_alpha(),
-    "medium": pygame.image.load(path + "images/cracks/medium.png").convert_alpha(),
-    "heavy": pygame.image.load(path + "images/cracks/heavy.png").convert_alpha()
-};
+    toolImgs = {
+        "multitool": pygame.image.load(toolPath + "multitool.png").convert_alpha()
+    };
 
-for dict, image in crackImgs.items():
-    image.fill(orange, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
-        
-    
+    meleeImgs = {
+        "katana": pygame.image.load(path + "images/melee/katana.png")
+    }
 
-chunks = {}
-chunkSize = 10;
+    crackImgs = {
+        "light": pygame.image.load(path + "images/cracks/light.png").convert_alpha(),
+        "medium": pygame.image.load(path + "images/cracks/medium.png").convert_alpha(),
+        "heavy": pygame.image.load(path + "images/cracks/heavy.png").convert_alpha()
+    };
 
-
-
-totalChunkSize = chunkSize * tileSize;
-
-screenChunks = [1, 1];
- # calculate how many chunks should be on screen (width, height)
-screenChunks[0] = math.ceil(sW / totalChunkSize) + 2;
-screenChunks[1] = math.ceil(sH / totalChunkSize) + 2;
+    for dict, image in crackImgs.items():
+        image.fill(orange, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
 
 
 
@@ -916,14 +922,14 @@ def getTile (x, y, otherInfo = False) :
 
 def updateCamera () :
     
-    camera.offsetX = mouse.absX - sW/2;
-    camera.offsetY = mouse.absY - sH/2;
+    camera.offsetX = mouse.absX - screenWidth/2;
+    camera.offsetY = mouse.absY - screenHeight/2;
     
     camera.px = camera.realX;
     camera.py = camera.realY;
     
-    camera.realX -= round((camera.realX - (player.x + player.width/2) + sW/2 - camera.offsetX) / camera.smoothness);
-    camera.realY -= round((camera.realY - (player.y + player.height/2) + sH/2 - camera.offsetY) / camera.smoothness);
+    camera.realX -= round((camera.realX - (player.x + player.width/2) + screenWidth/2 - camera.offsetX) / camera.smoothness);
+    camera.realY -= round((camera.realY - (player.y + player.height/2) + screenHeight/2 - camera.offsetY) / camera.smoothness);
     
     if camera.shakeTime > 0:
         camera.shakeTime -= 1;
@@ -1016,7 +1022,7 @@ def playerFrame () :
 
     def hotbarStuff():
         
-        hotbarRect.x = round(sW/2 - hotbarRect.width * 3);
+        hotbarRect.x = round(screenWidth/2 - hotbarRect.width * 3);
         hotbarRect.y = 50;
 
         item = player.hotbar.slotContents[player.hotbar.slot];
@@ -1093,11 +1099,11 @@ def playerFrame () :
             else: player.inventory["open"] = True;
 
         if player.inventory["open"]:
-            hotbarRect.x = sW/2 - hotbarRect.width * 3;
+            hotbarRect.x = screenWidth/2 - hotbarRect.width * 3;
 
             def drawInventoryAndUpdate():
                 for x in range(3):
-                    hotbarRect.y = sH/2 - hotbarRect.height * 3;
+                    hotbarRect.y = screenHeight/2 - hotbarRect.height * 3;
                     hotbarRect.x += hotbarRect.width + 3;
                     for y in range(3):
                         pygame.draw.rect(screen, blue, hotbarRect);
