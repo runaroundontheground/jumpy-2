@@ -1,5 +1,5 @@
 import pygame, math, sys, random, os, time;
-from testingFile import *
+
 
 pygame.init();
 
