@@ -355,8 +355,9 @@ icons = {
 };
 
 for key, icon in icons.items():
-    width = int(icon.get_width() / 1.5);
-    height = int(icon.get_height() / 1.5);
+    scale = 0.5;
+    width = int(icon.get_width() * scale);
+    height = int(icon.get_height() * scale);
     pygame.transform.scale(icon, (width, height));
 
 class tileItem ():
@@ -423,7 +424,8 @@ class tileItem ():
                         chunks[chunkPos][tilePos] = this.data;
 
     def handRender(this):
-        pass
+        pos = (int(player.x - camera.x), int(player.y - camera.y));
+        screen.blit(this.icon, pos);
 
 class toolItem ():
     def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool", itemType = "tool"):
@@ -553,8 +555,10 @@ class meleeItem ():
 
     def handRender(this):
         
-        pos = (int(player.x - camera.x), int(player.y - camera.y));
-        screen.blit(this.icon, pos);
+        pos = (int(player.x - camera.x - 34), int(player.y - camera.y - 20));
+        drawRect = (0, 0, this.animData["width"], this.animData["height"]);
+        newImage = pygame.Surface.subsurface(this.image, drawRect);
+        screen.blit(newImage, pos);
         
 
 #class rangedItem ():
@@ -618,6 +622,7 @@ class Player ():
         this.rect = pygame.Rect(0, 0, 0, 0);
         this.meleeRect = pygame.Rect(0, 0, 0, 0);
         this.allowDebugRects = False;
+        this.itemSuckRect = (0, 0, 0, 0);
         
         this.jumpPower = -5; # normal -5
         this.maxXV = 8; # normal 8
@@ -798,7 +803,8 @@ class itemEntity():
 
         
         this.image = this.data.icon;
-        this.rect = pygame.Rect(0, 0, tileSize, tileSize);
+        this.image = pygame.transform.scale(this.image, (20, 20));
+        this.rect = pygame.Rect(0, 0, 20, 20);
 
 def spawnItem(x = 0, y = 0, xv = 0, yv = 0, id = "dirt"):
     item = itemEntity(x, y, xv, yv, id);
@@ -1287,7 +1293,7 @@ def playerFrame () :
         
         def doWallclimb():
             if player.state == "wallclimb" or player.state == "climb up":
-                if player.yv > 0: player.anim = "idle";
+                if player.yv > 0.1: player.anim = "idle";
 
                 def jumpOff(XV):
                     player.lockX = False;
@@ -1322,7 +1328,7 @@ def playerFrame () :
 
                     grabby = getTile(player.x - tileSize, player.y);
                     player.flipH = True;
-
+                    print(player.anim);
                     if not grabby:
                         player.yv = 0;
                         player.anim = "wallhang";
@@ -1492,14 +1498,19 @@ def groundItemsFrame(this):
         this.yv = 0;
     else:
         this.yv += gravity;
+    
+    # REMOVE LATER!!!
+    speed = 5;
+    if this.x < player.x:
+        this.x += speed;
+    if this.x > player.x:
+        this.x -= speed;
+    if this.y > player.y:
+        this.y -= speed;
 
 
     if this.rect.colliderect(player.rect): 
         groundItems.remove(this);
-    
-    pygame.draw.rect(screen, orange, (int(this.x - camera.x), int(this.y - camera.y), tileSize, tileSize));
-
-
 
 
     coord = (round(this.x - camera.x), round(this.y - camera.y));
