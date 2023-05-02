@@ -115,7 +115,7 @@ def loadPlayerAnims():
     addAnim("crouch walk", animPath + "crouch walk.png", 16, 1);
     addAnim("wallclimb", animPath + "wallclimb.png", 14, 4);
     addAnim("wallhang", animPath + "wallhang.png", singleFrame = True);
-    addAnim("wallhang (reach)" animPath + "wallhang (reach).png", singleFrame = True);
+    addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
 
     addAnim("swing", noImage, singleFrame = True, scale = 1);
     addAnim("fall", noImage, singleFrame = True, scale = 1);
