@@ -1,4 +1,5 @@
 import pygame, math, sys, random, os, time;
+
 pygame.init();
 
 sW, sH = 1200, 800; # normally 600, 400
@@ -49,180 +50,234 @@ screenRect.height += tileSize;
     
 
 
-animPath = path + "animations/player (no item)/";
-noImage = path + "animations/unfinished/tpose.png";
 
 
+stickAnim = {};
 
-stickAnim = {
+def createPlayerAnimations():
+    global stickAnim;
+
+    animPath = path + "animations/player/player (no item)/";
+    noArmPath = path + "animations/player/player (no arms)/";
+    noRightArmPath = path + "animations/player/player (no right arm)";
+    noLeftArmPath = path + "animations/player/player (no left arm)";
+    noImage = path + "animations/unfinished/tpose.png";
     
-    "run": {
-        "image": pygame.image.load(animPath + "run.png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 22, 
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1, # this isn't assigned until later
-        "height": 1, # this isn't assigned until later
-        "singleFrame": False
+    def addAnim(name, imagePath, frames = 0, midFrames = 0, singleFrame = False, scale = 0.255):
+        global stickAnim;
+
+        image = pygame.image.load(imagePath).convert_alpha();
+
+        width = image.get_width();
+        height = image.get_height();
+
+        image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+
+        width = image.get_width() / frames;
+        height = image.get_height();
+
+        stickAnim[name] = {
+            "image": image,
+            "currentFrame": 0,
+            "frames": frames,
+            "currentMidFrame": 0,
+            "lastMidFrame": midFrames,
+            "width": width,
+            "height": height,
+            "singleFrame": singleFrame
+        }
+
+
+
+    addAnim("run", animPath + "run.png", 22, 1, False, 0.28);
+    addAnim("walk", animPath + "walk.png", 16, 1);
+    addAnim("idle", animPath + "idle.png", 2, FPS*2);
+    addAnim("slide (in)", animPath + "slide (in).png", 8, 1);
+    addAnim("slide (mid)", animPath + "slide (mid).png", 3);
+    addAnim("slide (out, stand)", animPath + "slide (out, stand).png", 8, 3);
+    addAnim("slide (out, crouch)", animPath + "slide (out, crouch).png", 7, 4);
+    addAnim("crouch", animPath + "crouch.png", singleFrame = True);
+    addAnim("crouch walk", animPath + "crouch walk.png", 16, 1);
+    addAnim("wallclimb", animPath + "wallclimb.png", 14, 4);
+    addAnim("wallhang", animPath + "wallhang.png", singleFrame = True);
+    addAnim("wallhang (reach)" animPath + "wallhang (reach).png", singleFrame = True);
+
+    addAnim("swing", noImage, singleFrame = True, scale = 1);
+    addAnim("fall", noImage, singleFrame = True, scale = 1);
+    addAnim("climb up", noImage, singleFrame = True, scale = 1);
+
+
+    
+    """ #commenting? out this so i can test other thing
+    stickAnim = {
+    
+        "run": {
+            "image": pygame.image.load(animPath + "run.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 22, 
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1, # this isn't assigned until later
+            "height": 1, # this isn't assigned until later
+            "singleFrame": False
+            },
+        
+        "walk": {
+            "image": pygame.image.load(animPath + "walk.png").convert_alpha(),
+            "currentFrame": 0, 
+            "frames": 16, 
+            "currentMidFrame": 0, 
+            "lastMidFrame": 1, 
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+            },
+        
+        "idle": {
+            "image": pygame.image.load(animPath + "idle.png").convert_alpha(), 
+            "currentFrame": 0, 
+            "frames": 2, 
+            "currentMidFrame": 0, 
+            "lastMidFrame": FPS*2, 
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+            },
+        
+        "slide (in)": {
+            "image": pygame.image.load(animPath + "slide (in).png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 8, 
+            "currentMidFrame": 0, 
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1, 
+            "singleFrame": False
+            },
+        
+        "slide (mid)": {
+            "image": pygame.image.load(animPath + "slide (mid).png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 3,
+            "currentMidFrame": 0,
+            "lastMidFrame": 0,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+            },
+        
+        "slide (out, stand)": {
+            "image": pygame.image.load(animPath + "slide (out, stand).png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 8,
+            "currentMidFrame": 0,
+            "lastMidFrame": 3,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
         },
-    
-    "walk": {
-        "image": pygame.image.load(animPath + "walk.png").convert_alpha(),
-        "currentFrame": 0, 
-        "frames": 16, 
-        "currentMidFrame": 0, 
-        "lastMidFrame": 1, 
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
+        
+        "slide (out, crouch)": {
+            "image": pygame.image.load(animPath + "slide (out, crouch).png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 7,
+            "currentMidFrame": 0,
+            "lastMidFrame": 4,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
         },
-    
-    "idle": {
-        "image": pygame.image.load(animPath + "idle.png").convert_alpha(), 
-        "currentFrame": 0, 
-        "frames": 2, 
-        "currentMidFrame": 0, 
-        "lastMidFrame": FPS*2, 
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
+
+        "crouch": {
+            "image": pygame.image.load(animPath + "crouch.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 1,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": True
         },
-    
-    "slide (in)": {
-        "image": pygame.image.load(animPath + "slide (in).png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 8, 
-        "currentMidFrame": 0, 
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1, 
-        "singleFrame": False
+
+        "crouch walk": {
+            "image": pygame.image.load(animPath + "crouch walk.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 16,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
         },
-    
-    "slide (mid)": {
-        "image": pygame.image.load(animPath + "slide (mid).png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 3,
-        "currentMidFrame": 0,
-        "lastMidFrame": 0,
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
+
+        "swing": {
+            "image": pygame.image.load(noImage).convert_alpha(),
+            "currentFrame": 0,
+            "frames": 8,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": True
         },
-    
-    "slide (out, stand)": {
-        "image": pygame.image.load(animPath + "slide (out, stand).png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 8,
-        "currentMidFrame": 0,
-        "lastMidFrame": 3,
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
-    },
-    
-    "slide (out, crouch)": {
-        "image": pygame.image.load(animPath + "slide (out, crouch).png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 7,
-        "currentMidFrame": 0,
-        "lastMidFrame": 4,
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
-    },
 
-    "crouch": {
-        "image": pygame.image.load(animPath + "crouch.png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 1,
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1,
-        "singleFrame": True
-    },
+        "fall": {
+            "image": pygame.image.load(noImage).convert_alpha(),
+            "currentFrame": 0,
+            "frames": 1,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": True
+        },
 
-    "crouch walk": {
-        "image": pygame.image.load(animPath + "crouch walk.png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 16,
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
-    },
+        "wallclimb": {
+            "image": pygame.image.load(animPath + "wallclimb.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 14,
+            "currentMidFrame": 0,
+            "lastMidFrame": 4,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+        },
 
-    "swing": {
-        "image": pygame.image.load(noImage).convert_alpha(),
-        "currentFrame": 0,
-        "frames": 8,
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1,
-        "singleFrame": True
-    },
+        "wallhang": {
+            "image": pygame.image.load(animPath + "wallhang.png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 0,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": False
+        },
 
-    "fall": {
-        "image": pygame.image.load(noImage).convert_alpha(),
-        "currentFrame": 0,
-        "frames": 1,
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1,
-        "singleFrame": True
-    },
+        "wallhang (reach)": {
+            "image": pygame.image.load(animPath + "wallhang (reach).png").convert_alpha(),
+            "currentFrame": 0,
+            "frames": 0,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": True
+        },
 
-    "wallclimb": {
-        "image": pygame.image.load(animPath + "wallclimb.png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 14,
-        "currentMidFrame": 0,
-        "lastMidFrame": 4,
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
-    },
+        "climb up": {
+            "image": pygame.image.load(noImage).convert_alpha(),
+            "currentFrame": 0,
+            "frames": 0,
+            "currentMidFrame": 0,
+            "lastMidFrame": 1,
+            "width": 1,
+            "height": 1,
+            "singleFrame": True
+        }
 
-    "wallhang": {
-        "image": pygame.image.load(animPath + "wallhang.png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 0,
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1,
-        "singleFrame": False
-    },
-
-    "wallhang (reach)": {
-        "image": pygame.image.load(animPath + "wallhang (reach).png").convert_alpha(),
-        "currentFrame": 0,
-        "frames": 0,
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1,
-        "singleFrame": True
-    },
-
-    "climb up": {
-        "image": pygame.image.load(noImage).convert_alpha(),
-        "currentFrame": 0,
-        "frames": 0,
-        "currentMidFrame": 0,
-        "lastMidFrame": 1,
-        "width": 1,
-        "height": 1,
-        "singleFrame": True
     }
-
-}
-
+"""
 tilePath = path + "images/tiles/";
 toolPath = path + "images/tools/";
 
@@ -249,43 +304,9 @@ crackImgs = {
     "heavy": pygame.image.load(path + "images/cracks/heavy.png").convert_alpha()
 };
 
-def updateImages():
-
-    def transformImage (animation, scale) :
-
-        data = stickAnim[animation];
-
-        width = data["image"].get_width();
-        height = data["image"].get_height();
-
-        if data["image"] == noImage: 
-            print("it's tpose?");
-
-        data["image"] = pygame.transform.scale(data["image"], (round(width * scale), round(height * scale)));
-
-        if not data["image"] == noImage:
-            data["width"] = data["image"].get_width() / data["frames"];
-            data["height"] = data["image"].get_height();
+for dict, image in crackImgs.items():
+    image.fill(orange, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
         
-        stickAnim[animation] = data;
-
-    transformImage("run",  0.28);
-    transformImage("walk", 0.255);
-    transformImage("idle", 0.255);
-    transformImage("slide (in)", 0.255);
-    transformImage("slide (mid)", 0.255);
-    transformImage("slide (out, stand)", 0.255);
-    transformImage("slide (out, crouch)", 0.255);
-    transformImage("crouch", 0.255);
-    transformImage("crouch walk", 0.255);
-    transformImage("wallclimb", 0.255);
-    transformImage("swing", 1);
-    transformImage("fall", 1);
-
-    for dict, image in crackImgs.items():
-        image.fill(orange, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
-        
-updateImages();
     
 
 chunks = {}
