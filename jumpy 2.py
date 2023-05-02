@@ -182,7 +182,7 @@ stickAnim = {
         "currentFrame": 0,
         "frames": 14,
         "currentMidFrame": 0,
-        "lastMidFrame": 1,
+        "lastMidFrame": 4,
         "width": 1,
         "height": 1,
         "singleFrame": False
@@ -225,7 +225,7 @@ stickAnim = {
 
 tilePath = path + "images/tiles/";
 toolPath = path + "images/tools/";
-#
+
 tileImgs = {
 
 "air": 0,
@@ -278,7 +278,7 @@ def updateImages():
     transformImage("slide (out, crouch)", 0.255);
     transformImage("crouch", 0.255);
     transformImage("crouch walk", 0.255);
-    transformImage("wallclimb", 1);
+    transformImage("wallclimb", 0.255);
     transformImage("swing", 1);
     transformImage("fall", 1);
 
@@ -353,16 +353,18 @@ icons = {
     "multitool": pygame.Surface.copy(toolImgs["multitool"]),
     "katana": pygame.Surface.copy(meleeImgs["katana"])
 };
-icons["multitool"] = pygame.transform.scale(icons["multitool"], (round(icons["multitool"].get_width() * 1.7), round(icons["multitool"].get_height() * 1.7)));
+
 for key, icon in icons.items():
     width = int(icon.get_width() / 1.5);
     height = int(icon.get_height() / 1.5);
     pygame.transform.scale(icon, (width, height));
 
 class tileItem ():
-    def __init__(this, data = {"type": "grass", "hardness": 3}):
+    def __init__(this, data = {"type": "grass", "hardness": 3}, itemType = "tile"):
         this.data = data;
         this.icon = icons[this.data["type"]];
+        this.itemType = itemType;
+        this.useTime = 2;
 
     def use(this):
             testChunk((mouse.x, mouse.y));
@@ -372,6 +374,35 @@ class tileItem ():
             tile = chunks[chunkPos][tilePos];
             rectPos = getTilePos(player.x, player.y);
             noPlacementRect = pygame.Rect(rectPos[0], rectPos[1], player.width, player.height);
+
+            if tile["type"] != "air" and tile != this.data:
+                otherTilePos = getTilePos(mouse.x, mouse.y);
+                x = otherTilePos[0];
+                y = otherTilePos[1];
+
+                totalBreakProgress = player.breakProgress / tile["hardness"];
+                pos = (int(x - camera.x), int(y - camera.y));
+                
+                if totalBreakProgress > 0.66:
+                    screen.blit(crackImgs["heavy"], pos);
+                elif totalBreakProgress > 0.33:
+                    screen.blit(crackImgs["medium"], pos);
+                else:
+                    screen.blit(crackImgs["light"], pos);
+                
+                if player.useTime == 0:
+                    player.breakProgress += player.breakPower;
+                    player.useTime = player.toolUseTime;
+
+                    if tile["type"] == "grass":
+                        chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                    
+                    if player.breakProgress >= tile["hardness"]:
+                        spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
+                        chunks[chunkPos][tilePos] = this.data;
+                        player.breakProgress = 0;
+                        player.breakingTilePos = "none";
+
 
             if player.x > rectPos[0]:
                 noPlacementRect.width += tileSize;
@@ -395,12 +426,13 @@ class tileItem ():
         pass
 
 class toolItem ():
-    def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool"):
+    def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool", itemType = "tool"):
 
         this.breakType = breakType;
         this.breakPower = breakPower;
         this.useTime = useTime;
         this.icon = icons[icon];
+        this.itemType = itemType;
 
     def use(this):
         
@@ -453,12 +485,13 @@ class toolItem ():
         pass
 
 class meleeItem ():
-    def __init__(this, damage = 3, attackRange = 2, icon = "katana", imgPath = path + "animations/katana (in hand).png"):
+    def __init__(this, damage = 3, attackRange = 2, icon = "katana", imgPath = path + "animations/katana (in hand).png", itemType = "melee"):
         this.damage = damage;
         this.attackRange = attackRange;
         this.attackAngle = 90;
         this.icon = icons[icon];
         this.image = pygame.image.load(imgPath);
+        this.itemType = itemType;
         this.angle = 0;
         scale = 3;
         this.image = pygame.transform.scale(this.image, (int(this.image.get_width() / scale), int(this.image.get_height() / scale)));
@@ -643,6 +676,8 @@ class Player ():
         this.useTime = 0;
         this.breakProgress = 0;
         this.breakingTilePos = 0; # will be "getTile" later
+        this.breakPower = 0;
+        this.toolUseTime = 5;
         
 class Grapple () :
     def __init__(this):
@@ -992,9 +1027,25 @@ def playerFrame () :
         if keys[pygame.K_3]: player.hotbar.slot = 2;
         if keys[pygame.K_4]: player.hotbar.slot = 3;
         if keys[pygame.K_5]: player.hotbar.slot = 4;
-
     hotbarStuff();
+
     def inventoryStuff():
+
+        for slot, item in player.inventory.items():
+            if item != "none" and slot != "open":
+                if item.itemType == "tool":
+                    if item.breakType == "all" or "not wood": 
+                        player.breakPower = item.breakPower;
+                        player.toolUseTime = item.useTime;
+                    break;
+        for slot, item in player.hotbar.slotContents.items():
+            if item != "none":
+                if item.itemType == "tool":
+                    if item.breakType == "all" or "not wood":
+                        player.breakPower = item.breakPower;
+                        player.toolUseTime = item.useTime;
+                    break;
+
 
         if keys[pygame.K_e]:
             if player.inventory["open"]: player.inventory["open"] = False;
@@ -1020,7 +1071,6 @@ def playerFrame () :
         if keys[pygame.K_q]:
                 if not grapple.hooked: grapple.fire();
                 else: grapple.unhook();
-    
     inventoryStuff();
         
     def unstuckPlayerX () :
@@ -1154,7 +1204,7 @@ def playerFrame () :
                         if player.tiles.right or player.tiles.left:
                             player.lockX = True;
                             player.anim = "wallclimb";
-                            player.state = player.anim;
+                            player.state = "wallclimb";
                             player.abilitesUsed["wallclimb"] = True;
                             player.yv = player.jumpPower * 1.5;
                 # walljump
@@ -1237,13 +1287,15 @@ def playerFrame () :
         
         def doWallclimb():
             if player.state == "wallclimb" or player.state == "climb up":
-                
+                if player.yv > 0: player.anim = "idle";
+
                 def jumpOff(XV):
                     player.lockX = False;
                     player.xv = XV;
                     player.yv = player.jumpPower;
                     player.abilitesUsed["wallclimb"] = False;
                     player.state = "run";
+                    player.angle = 0;
                 
                 grabby = False;
 
@@ -1294,6 +1346,8 @@ def playerFrame () :
                 if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
+                    player.anim = "idle"; player.state = "idle";
+                    player.angle = 0;
         doWallclimb();
 
 
@@ -1388,6 +1442,9 @@ def playerFrame () :
         
         if player.state == "crouch":
             num2 = 5;
+        
+        if player.state == "wallclimb":
+            num = -5;
        
 
         animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
@@ -1554,6 +1611,13 @@ while running: # game loop
             mouse.pressed = True;
         if event.type == pygame.MOUSEBUTTONUP:
             mouse.down = False;
+        if event.type == pygame.MOUSEWHEEL:
+            player.hotbar.slot -= event.y;
+            if player.hotbar.slot <= -1:
+                player.hotbar.slot = 0;
+            if player.hotbar.slot >= 5:
+                player.hotbar.slot = 4;
+
             
                         
                 
