@@ -355,10 +355,16 @@ icons = {
 };
 
 for key, icon in icons.items():
-    scale = 0.5;
-    width = int(icon.get_width() * scale);
-    height = int(icon.get_height() * scale);
-    pygame.transform.scale(icon, (width, height));
+
+    scale = 30 / icon.get_width();
+    width = icon.get_width() * scale;
+    height = icon.get_height() * scale;
+    icon = pygame.transform.scale(icon, (width, height));
+
+    scale = 30 / icon.get_height();
+    width = icon.get_width() * scale;
+    height = icon.get_height() * scale;
+    icon = pygame.transform.scale(icon, (width, height));
 
 class tileItem ():
     def __init__(this, data = {"type": "grass", "hardness": 3}, itemType = "tile"):
@@ -537,11 +543,10 @@ class meleeItem ():
         pygame.draw.rect(screen, purple, rect, 1)
   
         
-       
-        newImage = pygame.transform.flip(newImage, True, False);
-        if flipV: newImage = pygame.transform.flip(newImage, False, True);
+        flipV == this.angle < 90 and this.angle > -90;
+        newImage = pygame.transform.flip(newImage, True, flipV);
         newImage = pygame.transform.rotate(newImage, this.angle);
-        print(this.angle)
+        
         
         this.animData["currentMidFrame"] += 1;
 
@@ -558,6 +563,15 @@ class meleeItem ():
         pos = (int(player.x - camera.x - 34), int(player.y - camera.y - 20));
         drawRect = (0, 0, this.animData["width"], this.animData["height"]);
         newImage = pygame.Surface.subsurface(this.image, drawRect);
+
+        dx = player.x - mouse.x;
+        dy = player.y - mouse.y;
+
+        this.angle = round(math.degrees(math.atan2(-dy, dx)));
+        flipV == this.angle < 90 and this.angle > -90;
+        newImage = pygame.transform.flip(newImage, True, flipV);
+        newImage = pygame.transform.rotate(newImage, this.angle);
+        
         screen.blit(newImage, pos);
         
 
