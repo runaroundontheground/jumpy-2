@@ -126,6 +126,7 @@ def loadPlayerAnims():
     addAnim("swing", noImage, singleFrame = True, scale = 1);
     addAnim("fall", noImage, singleFrame = True, scale = 1);
     addAnim("climb up", noImage, singleFrame = True, scale = 1);
+    addAnim("roll", animPath + "run.png", 22);
 
 loadPlayerAnims();
 
@@ -279,7 +280,7 @@ def changeAngleSmoothly(currentAngle, desiredAngle, smoothness = 10):
             return currentAngle;
 
 class tileItem ():
-    def __init__(this, data = {"type": "grass", "hardness": 3}, itemType = "tile", holdType = "none"):
+    def __init__(this, data = {"type": "grass", "hardness": 3}, itemType = "tile", holdType = "right"):
         this.data = data;
         this.icon = icons[this.data["type"]];
         this.itemType = itemType;
@@ -347,7 +348,7 @@ class tileItem ():
         screen.blit(this.icon, pos);
 
 class toolItem ():
-    def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool", itemType = "tool", holdType = "none"):
+    def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool", itemType = "tool", holdType = "right"):
 
         this.breakType = breakType;
         this.breakPower = breakPower;
@@ -563,7 +564,7 @@ class Player ():
 
         this.rect = pygame.Rect(0, 0, 0, 0);
         this.meleeRect = pygame.Rect(0, 0, 0, 0);
-        this.allowDebugRects = False;
+        this.allowDebugRects = True;
         this.itemSuckRect = (0, 0, 0, 0);
         
         this.jumpPower = -5; # normal -5
@@ -580,15 +581,20 @@ class Player ():
         this.angle = 0;
         this.bHopSpeed = 0.5; # normal 0.5
         this.airTime = 0;
+
+        this.rollDir = "right";
+        this.rollAngleSpeed = 15;
         
         this.abilityToggles = {
             "slide": True,
+            "doubleJump": True,
             "wallclimb": True,
             "hook": True
         };
 
         this.abilitesUsed = {
             "wallclimb": False,
+            "doubleJump": False
         };
 
         this.width = tileSize;
@@ -628,7 +634,7 @@ class Player ():
         this.breakingTilePos = 0; # will be "getTile" later
         this.breakPower = 0;
         this.toolUseTime = 5;
-        
+
 class Grapple () :
     def __init__(this):
         this.x = 0;
@@ -945,7 +951,9 @@ def playerFrame () :
             if hotbarSlot == player.hotbar.slot:
                 item = player.hotbar.slotContents[player.hotbar.slot];
                 if item != "none":
-                    player.hideArm = "both";
+                    player.hideArm = item.holdType;
+                else:
+                    player.hideArm = "none";
                 hotbarColor = orange;
                 hotbarRect.x -= selectedHotbarSize;
                 hotbarRect.width += selectedHotbarSize * 2;
@@ -1043,6 +1051,7 @@ def playerFrame () :
             player.yv = 0;
             player.y = player.tilePos[1];
             player.airTime = 0;
+            player.abilitesUsed["doubleJump"] = False;
 
         elif not grapple.hooked:
             player.yv += gravity * timeScale;
@@ -1050,7 +1059,7 @@ def playerFrame () :
         
         if player.tiles.top:
             if player.yv < 0:
-                player.yv = 0;
+                player.yv = 0; 
     unstuckPlayerY();
     
     if grapple.fired or grapple.hooked:
@@ -1132,27 +1141,72 @@ def playerFrame () :
             if left: 
                 if player.xv > -player.maxXV: player.xv -= accel;
             
-            if player.airTime < 5 and player.yv >= 0:
+            if keys[pygame.K_LCTRL] and player.state != "roll":
+
+                player.state = "roll";
+                player.anim = "roll";
+                player.angle = 0;
+
+                if right:
+                    player.rollDir = "right";
+
+                if left:
+                    player.rollDir = "left";
+
+
+                if player.xv == 0:
+
+                    if player.flipH:
+                        player.rollDir = "left";
+                    else: 
+                        player.rollDir = "right";
+
+
+            # roll
+            if player.state == "roll":
+                if player.rollDir == "right":
+                    player.xv = player.maxXV;
+                    player.angle -= player.rollAngleSpeed;
+                if player.rollDir == "left":
+                    player.xv = -player.maxXV;
+                    player.angle += player.rollAngleSpeed;
+
+                if abs(player.angle) >= 400:
+                    player.state = "idle";
+                    player.anim = "idle";
+                    player.angle = 0;
+
+
+            if (player.airTime < 5 and player.yv >= 0) or not player.abilitesUsed["doubleJump"]:
                 # jump
                 if space and not down and not player.tiles.top:
-                    player.yv = player.jumpPower;
-                    if player.xv > 0:
-                        player.xv += player.bHopSpeed;
-                    if player.xv < 0:
-                        player.xv -= player.bHopSpeed;
+                    
+                    
+                    if player.tiles.bottom:
+                        player.yv = player.jumpPower;
+                        if player.xv > 0:
+                            player.xv += player.bHopSpeed;
+                        if player.xv < 0:
+                            player.xv -= player.bHopSpeed;
+
+                    if not player.tiles.bottom and player.yv > player.jumpPower/5:
+                        player.yv = player.jumpPower;
+                        player.abilitesUsed["doubleJump"] = True;
+                        
                 
             if player.tiles.bottom:
 
                 # do animation checks
-                if player.xv == 0:
-                    player.anim = "idle";
-                    player.state = player.anim;
-                elif abs(player.xv) > player.maxXV / 2: 
-                    player.anim = "run";
-                    player.state = player.anim;
-                else:
-                    player.anim = "walk";
-                    player.state = player.anim;
+                if player.state != "roll":
+                    if player.xv == 0:
+                        player.anim = "idle";
+                        player.state = player.anim;
+                    elif abs(player.xv) > player.maxXV / 2: 
+                        player.anim = "run";
+                        player.state = player.anim;
+                    else:
+                        player.anim = "walk";
+                        player.state = player.anim;
             else:
                 if up:
                     # wallclimb
@@ -1178,6 +1232,7 @@ def playerFrame () :
                     player.state = "slide";
                     player.y += player.width;
                     player.height = player.width;
+
         def doFriction():
             if player.tiles.bottom:
                 if (not left and not right) or (left and right) or player.state == "slide":
@@ -1188,8 +1243,6 @@ def playerFrame () :
                     if player.xv > -0.1 and player.xv < 0.1:
                         player.xv = 0;
         doFriction();
-
-        
 
         def doSlideThings():
             if player.state == "slide":
@@ -1248,6 +1301,7 @@ def playerFrame () :
         
         def doWallclimb():
             if player.state == "wallclimb" or player.state == "climb up":
+                unstuckPlayerX();
                 if player.yv > 0.1: player.anim = "idle";
 
                 def jumpOff(XV):
@@ -1259,10 +1313,11 @@ def playerFrame () :
                     player.angle = 0;
                 
                 grabby = False;
-
+                
                 if player.tiles.right:
 
                     grabby = getTile(player.x + tileSize, player.y);
+                    pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv + tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
                     player.flipH = False;
                     
                     if not grabby:
@@ -1280,8 +1335,8 @@ def playerFrame () :
                         player.state = "climb up";
 
                 if player.tiles.left:
-
-                    grabby = getTile(player.x - tileSize, player.y);
+                    pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv - tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
+                    grabby = getTile(player.tilePos[0] - tileSize + player.xv, player.tilePos[1]);
                     player.flipH = True;
                     
                     if not grabby:
@@ -1353,7 +1408,7 @@ def playerFrame () :
         if player.useTime > 0:
             player.useTime -= 1;
     playerTimers();
-
+    
     if player.anim == "run" or player.anim == "walk" or player.anim == "idle":
         if player.hideArm == "right":
             player.anim += " (no right arm)";
@@ -1361,9 +1416,9 @@ def playerFrame () :
             player.anim += " (no arms)";
 
     anim = player.image[player.anim];
-
-    if mouse.x > player.x: player.flipH = False;
-    elif mouse.x < player.x: player.flipH = True;
+    if player.state != "wallclimb" != "wallhang":
+        if mouse.x > player.x: player.flipH = False;
+        elif mouse.x < player.x: player.flipH = True;
     
     def updateAnimation():
         if not anim["singleFrame"]:
@@ -1413,12 +1468,15 @@ def playerFrame () :
     def animate () :
     
         
-        num = 7;
-        num2 = 3;
+        num = 0;
+        num2 = 0;
 
         
         if player.state == "run":
-            num = -15;
+            if player.flipH:
+                num = 1;
+            else:
+                num = -1;
         
         if player.state == "slide":
             num2 = -tileSize + 3;
@@ -1451,10 +1509,14 @@ def playerFrame () :
         if player.flipH: tilt -= player.yv;
         else: tilt += player.yv;
         
-        image = pygame.transform.rotate(image, player.angle + tilt);
-        coords = (round (player.x - camera.x + num), round (player.y - camera.y + num2));
+        pivot = [player.x + player.width/2 - camera.x + num, player.y + player.height/2 - camera.y + num2];
+        offset = pygame.math.Vector2(0, 0);
 
-        screen.blit(image, coords);
+        image, rect = rotatePoint(image, -(player.angle + tilt), pivot, offset);
+        
+        
+
+        screen.blit(image, rect);
         
         updateAnimation();
     animate();
