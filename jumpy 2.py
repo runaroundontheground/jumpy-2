@@ -209,17 +209,20 @@ icons = {
     "katana": pygame.Surface.copy(meleeImgs["katana"])
 };
 
+
 for key, icon in icons.items():
     
-    scale = 30 / icon.get_width();
+    scale = 40 / icon.get_width();
     width = icon.get_width() * scale;
     height = icon.get_height() * scale;
-    icon = pygame.transform.scale(icon, (width, height));
 
-    scale = 30 / icon.get_height();
+    icon = pygame.transform.scale(icon, (width, height));
+    
+    scale = 40 / icon.get_height();
     width = icon.get_width() * scale;
     height = icon.get_height() * scale;
     icon = pygame.transform.scale(icon, (width, height));
+    icons[key] = icon;
 
 def rotatePoint(surface, angle, pivot, offset):
     """Rotate the surface around the pivot point.
@@ -235,6 +238,41 @@ def rotatePoint(surface, angle, pivot, offset):
     # Add the offset vector to the center/pivot point to shift the rect.
     rect = rotated_image.get_rect(center = pivot + rotated_offset)
     return rotated_image, rect  # Return the rotated image and shifted rect.
+
+def changeAngleSmoothly(currentAngle, desiredAngle, smoothness = 10):
+            
+            
+            angleChange = 0;
+             # just to clarify, these are how many degrees away something is
+             # ex. 180 degrees to 250 degrees would be 70 right, 290 left (for how far to rotate)
+            angleToRight = 0;
+            angleToLeft = 0;
+            
+            if currentAngle > desiredAngle:
+                
+                angleToRight = (360 - currentAngle) + desiredAngle;
+                angleToLeft = currentAngle - desiredAngle;
+                
+            
+            
+            if currentAngle < desiredAngle:
+                
+                angleToLeft = (360 - desiredAngle) + currentAngle;
+                angleToRight = desiredAngle - currentAngle;
+                
+            
+            
+            if angleToRight < angleToLeft: angleChange = angleToRight;
+            if angleToLeft < angleToRight: angleChange = -angleToLeft;
+            
+            currentAngle += angleChange / smoothness;
+
+            
+            if currentAngle >= 360: currentAngle -= 360;
+            if currentAngle < 0: currentAngle += 360;
+            if abs(currentAngle) > 1000: currentAngle = 0;
+
+            return currentAngle;
 
 class tileItem ():
     def __init__(this, data = {"type": "grass", "hardness": 3}, itemType = "tile", holdType = "none"):
@@ -394,8 +432,11 @@ class meleeItem ():
         dx = player.x - mouse.x;
         dy = player.y - mouse.y;
 
-        this.angle = round(math.degrees(math.atan2(-dy, dx)));
-        if this.angle > -90 and this.angle < 90: player.flipH = True; flipV = False;
+        desiredAngle = round(math.degrees(math.atan2(-dy, dx)));
+
+        this.angle = changeAngleSmoothly(this.angle, desiredAngle);
+        
+        if this.angle < 90 or this.angle > 270: player.flipH = True; flipV = False;
         else: player.flipH = False; flipV = True;
         
         newImage = pygame.Surface.subsurface(this.image, drawRect);
@@ -437,16 +478,21 @@ class meleeItem ():
     def handRender(this):
         
         
-        drawRect = (0, 0, this.animData["width"], this.animData["height"]);
+        drawRect = (this.animData["width"] * this.animData["currentFrame"], 0, this.animData["width"], this.animData["height"]);
         newImage, rect, pos = this.updateThings(drawRect);
         
 
-        dx = player.x - mouse.x;
-        dy = player.y - mouse.y;
-       
+        if this.animData["currentFrame"] != 0:
+            if this.animData["currentFrame"] < this.animData["frames"]:
+                if this.animData["currentMidFrame"] < this.animData["midFrames"]: this.animData["currentMidFrame"] += 1;
 
-        this.angle = round(math.degrees(math.atan2(-dy, dx)));
-        this.animData["currentFrame"] = 0;
+            if this.animData["currentMidFrame"] >= this.animData["midFrames"]:
+                this.animData["currentMidFrame"] = 0;
+                this.animData["currentFrame"] += 1;
+
+            if this.animData["currentFrame"] >= this.animData["frames"]:
+                this.animData["currentFrame"] = 0;
+        
         
         
         screen.blit(newImage, rect);
@@ -1220,7 +1266,7 @@ def playerFrame () :
 
                     grabby = getTile(player.x - tileSize, player.y);
                     player.flipH = True;
-                    print(player.anim);
+                    
                     if not grabby:
                         player.yv = 0;
                         player.anim = "wallhang";
@@ -1345,7 +1391,7 @@ def playerFrame () :
                 if player.anim == "run":
                     if abs(player.xv) < player.maxXV: anim["lastMidFrame"] = math.floor(player.maxXV / abs(player.xv));
                     else: anim["lastMidFrame"] = 0;
-            print(anim["currentMidFrame"])
+            
                 
     def animate () :
     
