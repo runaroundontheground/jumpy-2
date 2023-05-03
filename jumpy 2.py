@@ -579,6 +579,7 @@ class Player ():
         this.friction = 15; # normal 15
         this.angle = 0;
         this.bHopSpeed = 0.5; # normal 0.5
+        this.airTime = 0;
         
         this.abilityToggles = {
             "slide": True,
@@ -606,6 +607,7 @@ class Player ():
         this.hotbar.slotContents[1] = items["multitool"];
         this.hotbar.slotContents[2] = items["stone"];
         this.hotbar.slotContents[0] = items["epic sword"];
+       
 
         this.hotbar.slot = 0;
         this.inventory = {
@@ -1040,9 +1042,11 @@ def playerFrame () :
         if player.tiles.bottom:
             player.yv = 0;
             player.y = player.tilePos[1];
+            player.airTime = 0;
 
         elif not grapple.hooked:
             player.yv += gravity * timeScale;
+            player.airTime += timeScale;
         
         if player.tiles.top:
             if player.yv < 0:
@@ -1128,16 +1132,18 @@ def playerFrame () :
             if left: 
                 if player.xv > -player.maxXV: player.xv -= accel;
             
-            if player.tiles.bottom:
+            if player.airTime < 5 and player.yv >= 0:
                 # jump
-                if space and not down and not player.tiles.top and player.yv >= 0:
+                if space and not down and not player.tiles.top:
                     player.yv = player.jumpPower;
                     if player.xv > 0:
                         player.xv += player.bHopSpeed;
                     if player.xv < 0:
                         player.xv -= player.bHopSpeed;
+                
+            if player.tiles.bottom:
 
-                 # do animation checks
+                # do animation checks
                 if player.xv == 0:
                     player.anim = "idle";
                     player.state = player.anim;
