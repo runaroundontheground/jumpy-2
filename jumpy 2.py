@@ -4,12 +4,12 @@ import pygame, math, sys, random, os, time;
 pygame.init();
 
 
-
+#test
 
 screenWidth, screenHeight = 1200, 800; # normally 600, 400
 
 tileSize = 30;
-chunks = {}
+chunks = {};
 chunkSize = 10;
 
 totalChunkSize = chunkSize * tileSize;
@@ -159,7 +159,7 @@ def loadOtherImages():
     };
 
     for dict, image in crackImgs.items():
-        image.fill(orange, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
+        image.fill(black, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
 loadOtherImages();
 
 def generateChunk (chunkPos) :
@@ -217,14 +217,14 @@ icons = {
 for key, icon in icons.items():
     
     scale = 40 / icon.get_width();
-    width = icon.get_width() * scale;
-    height = icon.get_height() * scale;
+    width = int(icon.get_width() * scale);
+    height = int(icon.get_height() * scale);
 
     icon = pygame.transform.scale(icon, (width, height));
     
     scale = 40 / icon.get_height();
-    width = icon.get_width() * scale;
-    height = icon.get_height() * scale;
+    width = int(icon.get_width() * scale);
+    height = int(icon.get_height() * scale);
     icon = pygame.transform.scale(icon, (width, height));
     icons[key] = icon;
 
@@ -862,7 +862,8 @@ def playerFrame () :
         player.rect.x = int(player.x);
         player.rect.y = int(player.y);
 
-        player.meleeRect.x = player.x;
+        player.meleeRect.x = player.rect.x;
+        player.meleeRect.y = player.rect.y;
         
         player.rect.width = int(player.width);
         player.rect.height = int(player.height);
@@ -1222,12 +1223,18 @@ def playerFrame () :
 
                 if left or right:
                     player.anim = "crouch walk";
+
                     if left:
                         player.x -= 3 * timeScale;
                         player.flipH = True;
+                        if player.tiles.left:
+                            player.x = player.tilePos[0];
+
                     if right:
                         player.x += 3 * timeScale;
                         player.flipH = False;
+                        if player.tiles.right:
+                            player.x = player.tilePos[0];
 
                 if not player.tiles.top and not down:
                     uncrouch()        
