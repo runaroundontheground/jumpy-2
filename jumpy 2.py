@@ -135,11 +135,16 @@ def loadPlayerAnims():
         addAnim("walk (no arms)", noArmPath + "walk (no arms).png", 16, 1);
         addAnim("idle (no arms)", noArmPath + "idle (no arms).png", 2, FPS*2);
     addNoArmAnims();
-    """
-    addAnim("run (no right arm)", noRightArmPath + "run (no right arm).png", 22, 1, False, 0.28);
-    addAnim("walk (no right arm)", noRightArmPath + "walk (no right arm).png", 16, 1);
-    addAnim("idle (no right arm)", noRightArmPath + "idle (no right arm).png", 2, FPS * 2);
-    """
+    
+    def addNoRightArmAnims():
+        addAnim("run (no right arm)", noRightArmPath + "run (no right arm).png", 22, 1, False, 0.28);
+        addAnim("walk (no right arm)", noRightArmPath + "walk (no right arm).png", 16, 1);
+        addAnim("idle (no right arm)", noRightArmPath + "idle (no right arm).png", 2, FPS * 2);
+    addNoRightArmAnims();
+
+    def addNoLeftArmAnims():
+        pass
+    addNoLeftArmAnims();
 
 loadPlayerAnims();
 
