@@ -74,9 +74,9 @@ def loadPlayerAnims():
     noArmPath = path + "animations/player/player (no arms)/";
     noRightArmPath = path + "animations/player/player (no right arm)";
     noLeftArmPath = path + "animations/player/player (no left arm)";
-    noImage = path + "animations/unfinished/tpose.png";
+    noImage = path + "animations/unfinished/error.png";
     
-    def addAnim(name, imagePath, frames = 1, midFrames = 0, singleFrame = False, scale = 0.255):
+    def addAnim(name, imagePath, frames = 1, midFrames = 0, singleFrame = False, scale = 0.255, repeat = True, nextAnim = "run"):
         global stickAnim;
 
         image = pygame.image.load(imagePath).convert_alpha();
@@ -97,36 +97,49 @@ def loadPlayerAnims():
             "lastMidFrame": midFrames,
             "width": width,
             "height": height,
-            "singleFrame": singleFrame
+            "singleFrame": singleFrame,
+            "repeat": repeat
         }
 
+        if not repeat:
+            stickAnim[name]["nextAnim"] = nextAnim;
 
 
-    addAnim("run", animPath + "run.png", 22, 1, False, 0.28);
-    addAnim("walk", animPath + "walk.png", 16, 1);
-    addAnim("idle", animPath + "idle.png", 2, FPS*2);
-    addAnim("slide (in)", animPath + "slide (in).png", 8, 1);
-    addAnim("slide (mid)", animPath + "slide (mid).png", 3);
-    addAnim("slide (out, stand)", animPath + "slide (out, stand).png", 8, 3);
-    addAnim("slide (out, crouch)", animPath + "slide (out, crouch).png", 7, 4);
-    addAnim("crouch", animPath + "crouch.png", singleFrame = True);
-    addAnim("crouch walk", animPath + "crouch walk.png", 16, 1);
-    addAnim("wallclimb", animPath + "wallclimb.png", 14, 4);
-    addAnim("wallhang", animPath + "wallhang.png", singleFrame = True);
-    addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
+    def addNormalAnims():
+         # common/often used animations
+        addAnim("run", animPath + "run.png", 22, 1, False, 0.28);
+        addAnim("walk", animPath + "walk.png", 16, 1);
+        addAnim("idle", animPath + "idle.png", 2, FPS*2);
+        addAnim("jump", animPath + "jump.png", 18, repeat = False, nextAnim = "fall");
+        addAnim("fall", animPath + "fall.png", 18);
+         # sliding animations
+        addAnim("slide (in)", animPath + "slide (in).png", 8, 1, repeat = False, nextAnim = "slide (mid)");
+        addAnim("slide (mid)", animPath + "slide (mid).png", 3);
+        addAnim("slide (out, stand)", animPath + "slide (out, stand).png", 8, 3, repeat = False, nextAnim = "idle");
+        addAnim("slide (out, crouch)", animPath + "slide (out, crouch).png", 7, 4, repeat = False, nextAnim = "crouch");
+         # crouch animations
+        addAnim("crouch", animPath + "crouch.png", singleFrame = True);
+        addAnim("crouch walk", animPath + "crouch walk.png", 16, 1);
+         # wallclimb / walljump related animations
+        addAnim("wallclimb", animPath + "wallclimb.png", 14, 4);
+        addAnim("wallhang", animPath + "wallhang.png", singleFrame = True);
+        addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
+         # misc animations
+        addAnim("swing", noImage, singleFrame = True, scale = 1);
+        addAnim("roll", noImage, 22);
+    addNormalAnims();
 
-    addAnim("run (no arms)", noArmPath + "run (no arms).png", 22, 1, False, 0.28);
-    addAnim("walk (no arms)", noArmPath + "walk (no arms).png", 16, 1);
-    addAnim("idle (no arms)", noArmPath + "idle (no arms).png", 2, FPS*2);
+    def addNoArmAnims():
+
+        addAnim("run (no arms)", noArmPath + "run (no arms).png", 22, 1, False, 0.28);
+        addAnim("walk (no arms)", noArmPath + "walk (no arms).png", 16, 1);
+        addAnim("idle (no arms)", noArmPath + "idle (no arms).png", 2, FPS*2);
+    addNoArmAnims();
     """
     addAnim("run (no right arm)", noRightArmPath + "run (no right arm).png", 22, 1, False, 0.28);
     addAnim("walk (no right arm)", noRightArmPath + "walk (no right arm).png", 16, 1);
     addAnim("idle (no right arm)", noRightArmPath + "idle (no right arm).png", 2, FPS * 2);
     """
-    addAnim("swing", noImage, singleFrame = True, scale = 1);
-    addAnim("fall", noImage, singleFrame = True, scale = 1);
-    addAnim("climb up", noImage, singleFrame = True, scale = 1);
-    addAnim("roll", animPath + "run.png", 22);
 
 loadPlayerAnims();
 
