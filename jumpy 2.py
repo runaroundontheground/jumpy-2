@@ -263,39 +263,44 @@ def rotatePoint(surface, angle, pivot, offset):
     return rotated_image, rect  # Return the rotated image and shifted rect.
 
 def changeAngleSmoothly(currentAngle, desiredAngle, smoothness = 10):
-            
-            
-            angleChange = 0;
-             # just to clarify, these are how many degrees away something is
-             # ex. 180 degrees to 250 degrees would be 70 right, 290 left (for how far to rotate)
-            angleToRight = 0;
-            angleToLeft = 0;
-            
-            if currentAngle > desiredAngle:
-                
-                angleToRight = (360 - currentAngle) + desiredAngle;
-                angleToLeft = currentAngle - desiredAngle;
-                
-            
-            
-            if currentAngle < desiredAngle:
-                
-                angleToLeft = (360 - desiredAngle) + currentAngle;
-                angleToRight = desiredAngle - currentAngle;
-                
-            
-            
-            if angleToRight < angleToLeft: angleChange = angleToRight;
-            if angleToLeft < angleToRight: angleChange = -angleToLeft;
-            
-            currentAngle += angleChange / smoothness;
 
-            
-            if currentAngle >= 360: currentAngle -= 360;
-            if currentAngle < 0: currentAngle += 360;
-            if abs(currentAngle) > 1000: currentAngle = 0;
+    """change an angle with configurable smoothness
+    args:
+        currentAngle: the current angle
+        desiredAngle: the angle you want to smooth out to
+        smoothness (optional): how smooth / slow the rotation is
+    """
+    angleChange = 0;
+        # just to clarify, these are how many degrees away something is
+        # ex. 180 degrees to 250 degrees would be 70 right, 290 left (for how far to rotate)
+    angleToRight = 0;
+    angleToLeft = 0;
+    
+    if currentAngle > desiredAngle:
+        
+        angleToRight = (360 - currentAngle) + desiredAngle;
+        angleToLeft = currentAngle - desiredAngle;
+        
+    
+    
+    if currentAngle < desiredAngle:
+        
+        angleToLeft = (360 - desiredAngle) + currentAngle;
+        angleToRight = desiredAngle - currentAngle;
+        
+    
+    
+    if angleToRight < angleToLeft: angleChange = angleToRight;
+    if angleToLeft < angleToRight: angleChange = -angleToLeft;
+    
+    currentAngle += angleChange / smoothness;
 
-            return currentAngle;
+    
+    if currentAngle >= 360: currentAngle -= 360;
+    if currentAngle < 0: currentAngle += 360;
+    if abs(currentAngle) > 1000: currentAngle = 0;
+
+    return currentAngle;
 
 class tileItem ():
     def __init__(this, data = {"type": "grass", "hardness": 3}, itemType = "tile", holdType = "right"):
