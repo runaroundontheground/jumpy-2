@@ -72,8 +72,8 @@ def loadPlayerAnims():
 
     animPath = path + "animations/player/player (no item)/";
     noArmPath = path + "animations/player/player (no arms)/";
-    noRightArmPath = path + "animations/player/player (no right arm)";
-    noLeftArmPath = path + "animations/player/player (no left arm)";
+    noRightArmPath = path + "animations/player/player (no right arm)/";
+    noLeftArmPath = path + "animations/player/player (no left arm)/";
     noImage = path + "animations/unfinished/error.png";
     
     def addAnim(name, imagePath, frames = 1, midFrames = 0, singleFrame = False, scale = 0.255, repeat = True, nextAnim = "run"):
@@ -107,11 +107,11 @@ def loadPlayerAnims():
 
     def addNormalAnims():
          # common/often used animations
-        addAnim("run", animPath + "run.png", 22, 1, False, 0.28);
+        addAnim("run", animPath + "run.png", 22, 1, scale = 0.28);
         addAnim("walk", animPath + "walk.png", 16, 1);
         addAnim("idle", animPath + "idle.png", 2, FPS*2);
-        addAnim("jump", animPath + "jump.png", 18, repeat = False, nextAnim = "fall");
-        addAnim("fall", animPath + "fall.png", 18);
+        addAnim("jump", animPath + "jump.png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
+        addAnim("fall", animPath + "fall.png", 16, 2, scale = 0.28);
          # sliding animations
         addAnim("slide (in)", animPath + "slide (in).png", 8, 1, repeat = False, nextAnim = "slide (mid)");
         addAnim("slide (mid)", animPath + "slide (mid).png", 3);
@@ -124,6 +124,7 @@ def loadPlayerAnims():
         addAnim("wallclimb", animPath + "wallclimb.png", 14, 4);
         addAnim("wallhang", animPath + "wallhang.png", singleFrame = True);
         addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
+        addAnim("climb up", noImage, singleFrame = True);
          # misc animations
         addAnim("swing", noImage, singleFrame = True, scale = 1);
         addAnim("roll", noImage, 22);
@@ -131,7 +132,7 @@ def loadPlayerAnims():
 
     def addNoArmAnims():
 
-        addAnim("run (no arms)", noArmPath + "run (no arms).png", 22, 1, False, 0.28);
+        addAnim("run (no arms)", noArmPath + "run (no arms).png", 22, 1, scale = 0.28);
         addAnim("walk (no arms)", noArmPath + "walk (no arms).png", 16, 1);
         addAnim("idle (no arms)", noArmPath + "idle (no arms).png", 2, FPS*2);
     addNoArmAnims();
@@ -610,7 +611,7 @@ class Player ():
         
         this.abilityToggles = {
             "slide": True,
-            "doubleJump": True,
+            "doubleJump": False,
             "wallclimb": True,
             "hook": True
         };
@@ -880,6 +881,8 @@ camera = Camera();
  # nav player
 def playerFrame () :
     global timeScale
+
+    previousAnim = player.anim;
     
     def updatePos():
         global timeScale;
@@ -1200,13 +1203,16 @@ def playerFrame () :
                     player.angle = 0;
 
 
-            if (player.airTime < 5 and player.yv >= 0) or not player.abilitesUsed["doubleJump"]:
+            if (player.airTime < 5 and player.yv >= 0) or (not player.abilitesUsed["doubleJump"] and player.abilityToggles["doubleJump"]):
                 # jump
                 if space and not down and not player.tiles.top:
                     
                     
                     if player.tiles.bottom:
                         player.yv = player.jumpPower;
+                        player.anim = "jump";
+                        player.image[player.anim]["currentFrame"] = 0;
+
                         if player.xv > 0:
                             player.xv += player.bHopSpeed;
                         if player.xv < 0:
@@ -1214,10 +1220,13 @@ def playerFrame () :
 
                     if not player.tiles.bottom and player.yv > player.jumpPower/5:
                         player.yv = player.jumpPower;
+                        player.anim = "jump";
+                        player.image[player.anim]["currentFrame"] = 0;
+                        
                         player.abilitesUsed["doubleJump"] = True;
                         
                 
-            if player.tiles.bottom:
+            if player.tiles.bottom and player.yv == 0:
 
                 # do animation checks
                 if player.state != "roll":
@@ -1258,7 +1267,7 @@ def playerFrame () :
 
         def doFriction():
             if player.tiles.bottom:
-                if (not left and not right) or (left and right) or player.state == "slide":
+                if (not left and not right) or (left and right) or player.state == "slide" or abs(player.xv) > player.maxXV:
                     # friction
                     friction = player.friction;
                     if player.state == "slide": friction *= 5;
@@ -1324,63 +1333,82 @@ def playerFrame () :
         
         def doWallclimb():
             if player.state == "wallclimb" or player.state == "climb up":
-                unstuckPlayerX();
-                if player.yv > 0.1: player.anim = "idle";
 
-                def jumpOff(XV):
+                def jumpOff(XV, YV = player.jumpPower):
                     player.lockX = False;
                     player.xv = XV;
-                    player.yv = player.jumpPower;
+                    player.yv = YV;
                     player.abilitesUsed["wallclimb"] = False;
                     player.state = "run";
+                    if YV != player.jumpPower: player.anim = "jump";
                     player.angle = 0;
+
+                unstuckPlayerX();
+                if player.yv > 5: 
+                    player.anim = "fall";
+                    jumpOff(0, player.yv);
+
+                
                 
                 grabby = False;
                 
                 if player.tiles.right:
 
-                    grabby = getTile(player.x + tileSize, player.y);
+                    
+                    if not getTile(player.x + tileSize, player.y) and not player.tiles.top:
+                        grabby = True;
+
                     pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv + tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
                     player.flipH = False;
                     
-                    if not grabby:
+                    if grabby:
                         player.yv = 0;
-                        player.anim = "wallhang";
-                        
+                        if player.state != "climb up":
+                            player.anim = "wallhang";
+                            
 
-                        if left: 
-                            player.anim = "wallhang (reach)";
+                            if left: 
+                                player.anim = "wallhang (reach)";
 
                     if space:
                         if left: jumpOff(-3);
-                    if right and up and not grabby:
+                    if right and up and grabby:
                         player.anim = "climb up";
                         player.state = "climb up";
 
                 if player.tiles.left:
                     pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv - tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
-                    grabby = getTile(player.tilePos[0] - tileSize + player.xv, player.tilePos[1]);
+                    if not getTile(player.tilePos[0] - tileSize + player.xv, player.tilePos[1]) and not player.tiles.top:
+                        grabby = True;
+
                     player.flipH = True;
                     
-                    if not grabby:
+                    if grabby:
                         player.yv = 0;
-                        player.anim = "wallhang";
-                        
+                        if player.state != "climb up":
+                            player.anim = "wallhang";
+                            
 
-                        if right:
-                            player.anim = "wallhang (reach)";
+                            if right:
+                                player.anim = "wallhang (reach)";
 
                     if space:
                         if right: jumpOff(3);
-                    if left and up and not grabby:
+                    if left and up and grabby:
                         player.anim = "climb up";
                         player.state = "climb up";
                         
 
-                if player.state == "climb up":
-                    player.y -= 3;
-                    player.angle += 3;
-
+                if player.state == "climb up" and not player.tiles.top:
+                    if player.y > player.tilePos[1]:
+                        player.y -= 3;
+                        if player.tiles.right:
+                            player.angle -= 3;
+                        if player.tiles.left:
+                            player.angle += 3;
+                    else:
+                        player.angle = 0;
+                        
 
                 if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
                     player.lockX = False;
@@ -1390,7 +1418,7 @@ def playerFrame () :
         doWallclimb();
 
 
-    unstuckPlayerX();
+    if player.anim != "climb up": unstuckPlayerX();
     
     def playerDebug () :
         global timeScale;
@@ -1445,7 +1473,9 @@ def playerFrame () :
     
     def updateAnimation():
         if not anim["singleFrame"]:
+
             playInReverse = False;
+
             if player.xv > 0:
                 if player.flipH:
                     playInReverse = True;
@@ -1454,7 +1484,11 @@ def playerFrame () :
                     playInReverse = True;
 
         
-
+            if previousAnim != player.anim:
+                if playInReverse:
+                    anim["currentFrame"] = anim["frames"] - 1;
+                else:
+                    anim["currentFrame"] = 0;
 
 
             if anim["currentMidFrame"] < anim["lastMidFrame"]:
@@ -1467,26 +1501,23 @@ def playerFrame () :
                 
                     if anim["currentFrame"] <= 0:
                         anim["currentFrame"] = anim["frames"] - 1;
-                        if player.state == "slide":
-                            if player.anim == "slide (in)":
-                                player.anim = "slide (mid)";
+                        if not anim["repeat"]:
+                            player.anim = anim["nextAnim"];
+                            player.image[player.anim]["currentFrame"] = player.image[player.anim]["frames"] - 1;
+                        
                 else:
                     anim["currentMidFrame"] = 0;
                     anim["currentFrame"] += 1;
-                
+                    
                     if anim["currentFrame"] >= anim["frames"]:
                         anim["currentFrame"] = 0;
-                        if player.state == "slide":
-                            if player.anim == "slide (in)":
-                                player.anim = "slide (mid)";
+                        if not anim["repeat"]:
+                            player.anim = anim["nextAnim"];
             
             if not player.xv == 0:
                 if player.anim == "walk":
                     anim["lastMidFrame"] = math.ceil(player.maxXV / 2 / abs(player.xv));
-                if player.anim == "run":
-                    if abs(player.xv) < player.maxXV: anim["lastMidFrame"] = math.floor(player.maxXV / abs(player.xv));
-                    else: anim["lastMidFrame"] = 0;
-            
+    
                 
     def animate () :
     
