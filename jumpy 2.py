@@ -98,20 +98,31 @@ def loadPlayerAnims():
             "width": width,
             "height": height,
             "singleFrame": singleFrame,
-            "repeat": repeat
+            "repeat": repeat,
+            "posFix": [(0, 0), (0, 0)]
         }
 
         if not repeat:
             stickAnim[name]["nextAnim"] = nextAnim;
 
+    def addPositionFix(name, pos1 = (0, 0), pos2 = (0, 0)):
+        stickAnim[name]["posFix"] = [
+            pos1, # when animation isn't flipped
+            pos2 # when animation is flipped
+        ];
 
     def addNormalAnims():
          # common/often used animations
         addAnim("run", animPath + "run.png", 22, 1, scale = 0.28);
+        addPositionFix("run", (0, 0), (0, 0));
         addAnim("walk", animPath + "walk.png", 16, 1);
+        addPositionFix("walk", (0, 0), (0, 0));
         addAnim("idle", animPath + "idle.png", 2, FPS*2);
+        addPositionFix("idle", (0, 0), (0, 0));
         addAnim("jump", animPath + "jump.png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
+        addPositionFix("jump", (0, 0), (0, 0));
         addAnim("fall", animPath + "fall.png", 16, 2, scale = 0.28);
+        addPositionFix("fall", (0, 0), (0, 0));
          # sliding animations
         addAnim("slide (in)", animPath + "slide (in).png", 8, 1, repeat = False, nextAnim = "slide (mid)");
         addAnim("slide (mid)", animPath + "slide (mid).png", 3);
@@ -131,16 +142,21 @@ def loadPlayerAnims():
     addNormalAnims();
 
     def addNoArmAnims():
-
+         # common/often used animations
         addAnim("run (no arms)", noArmPath + "run (no arms).png", 22, 1, scale = 0.28);
         addAnim("walk (no arms)", noArmPath + "walk (no arms).png", 16, 1);
         addAnim("idle (no arms)", noArmPath + "idle (no arms).png", 2, FPS*2);
+        addAnim("jump (no arms)", noArmPath + "jump (no arms).png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
+        addAnim("fall (no arms)", noArmPath + "fall (no arms).png", 16, 2, scale = 0.28);
     addNoArmAnims();
     
     def addNoRightArmAnims():
+         # common/often used animations
         addAnim("run (no right arm)", noRightArmPath + "run (no right arm).png", 22, 1, False, 0.28);
         addAnim("walk (no right arm)", noRightArmPath + "walk (no right arm).png", 16, 1);
         addAnim("idle (no right arm)", noRightArmPath + "idle (no right arm).png", 2, FPS * 2);
+        addAnim("jump (no right arm)", animPath + "jump.png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
+        addAnim("fall (no right arm)", animPath + "fall.png", 16, 2, scale = 0.28);
     addNoRightArmAnims();
 
     def addNoLeftArmAnims():
@@ -1460,13 +1476,24 @@ def playerFrame () :
             player.useTime -= 1;
     playerTimers();
     
-    if player.anim == "run" or player.anim == "walk" or player.anim == "idle":
-        if player.hideArm == "right":
-            player.anim += " (no right arm)";
-        elif player.hideArm == "both":
+    if player.hideArm == "both":
+        try:
+            player.image[player.anim + " (no arms)"];
+        except:
+            pass;
+        else:
             player.anim += " (no arms)";
+    
+    if player.hideArm == "right":
+        try:
+            player.image[player.anim + " (no right arm)"];
+        except:
+            pass;
+        else:
+            player.anim += " (no right arm)";
 
     anim = player.image[player.anim];
+
     if player.state != "wallclimb" != "wallhang":
         if mouse.x > player.x: player.flipH = False;
         elif mouse.x < player.x: player.flipH = True;
@@ -1514,56 +1541,36 @@ def playerFrame () :
                         if not anim["repeat"]:
                             player.anim = anim["nextAnim"];
             
-            if not player.xv == 0:
+            if player.xv != 0:
                 if player.anim == "walk":
                     anim["lastMidFrame"] = math.ceil(player.maxXV / 2 / abs(player.xv));
     
                 
     def animate () :
-    
-        
-        num = 0;
-        num2 = 0;
-
-        
-        if player.state == "run":
-            if player.flipH:
-                num = 1;
-            else:
-                num = -1;
-        
-        if player.state == "slide":
-            num2 = -tileSize + 3;
-            num = -tileSize/2;
-            if player.anim == "slide (mid)":
-                num2 = 3;
-            if player.anim == "slide (out, stand)":
-                num2 += 6;
-            if player.anim == "slide (out, crouch)":
-                num2 = 20;
-        
-        if player.state == "crouch":
-            num2 = 5;
-        
-        if player.state == "wallclimb":
-            num = -5;
        
 
         animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
 
         image = anim["image"];
-
         image = pygame.Surface.subsurface(image, animRect);
-
-        
         image = pygame.transform.flip(image, player.flipH, False);
         
         tilt = -player.xv / 2;
         
         if player.flipH: tilt -= player.yv;
         else: tilt += player.yv;
-        
-        pivot = [player.x + player.width/2 - camera.x + num, player.y + player.height/2 - camera.y + num2];
+
+        index = 0;
+        if player.flipH:
+            index = 1;
+
+        x = player.x + player.width/2 - camera.x;
+        y = player.y + player.height/2 - camera.y;
+
+        x += anim["posFix"][index][0];
+        y += anim["posFix"][index][1];
+
+        pivot = [x, y];
         offset = pygame.math.Vector2(0, 0);
 
         image, rect = rotatePoint(image, -(player.angle + tilt), pivot, offset);
