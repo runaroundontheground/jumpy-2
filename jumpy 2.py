@@ -125,20 +125,32 @@ def loadPlayerAnims():
         addPositionFix("fall", (0, 0), (0, 0));
          # sliding animations
         addAnim("slide (in)", animPath + "slide (in).png", 8, 1, repeat = False, nextAnim = "slide (mid)");
+        addPositionFix("slide (in)", (0, 0), (0, 0));
         addAnim("slide (mid)", animPath + "slide (mid).png", 3);
+        addPositionFix("slide (mid)", (0, 0), (0, 0));
         addAnim("slide (out, stand)", animPath + "slide (out, stand).png", 8, 3, repeat = False, nextAnim = "idle");
+        addPositionFix("slide (out, stand)", (0, 0), (0, 0));
         addAnim("slide (out, crouch)", animPath + "slide (out, crouch).png", 7, 4, repeat = False, nextAnim = "crouch");
+        addPositionFix("slide (out, crouch)", (0, 0), (0, 0));
          # crouch animations
         addAnim("crouch", animPath + "crouch.png", singleFrame = True);
+        addPositionFix("crouch", (0, 0), (0, 0));
         addAnim("crouch walk", animPath + "crouch walk.png", 16, 1);
+        addPositionFix("crouch walk", (0, 0), (0, 0));
          # wallclimb / walljump related animations
         addAnim("wallclimb", animPath + "wallclimb.png", 14, 4);
+        addPositionFix("wallclimb", (0, 0), (0, 0));
         addAnim("wallhang", animPath + "wallhang.png", singleFrame = True);
+        addPositionFix("wallhang", (0, 0), (0, 0));
         addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
+        addPositionFix("wallhang (reach)", (0, 0), (0, 0));
         addAnim("climb up", noImage, singleFrame = True);
+        addPositionFix("climb up", (0, 0), (0, 0));
          # misc animations
         addAnim("swing", noImage, singleFrame = True, scale = 1);
+        addPositionFix("swing", (0, 0), (0, 0));
         addAnim("roll", noImage, 22);
+        addPositionFix("roll", (0, 0), (0, 0));
     addNormalAnims();
 
     def addNoArmAnims():
@@ -153,10 +165,15 @@ def loadPlayerAnims():
     def addNoRightArmAnims():
          # common/often used animations
         addAnim("run (no right arm)", noRightArmPath + "run (no right arm).png", 22, 1, False, 0.28);
+        addPositionFix("run (no right arm)", (0, 0), (0, 0));
         addAnim("walk (no right arm)", noRightArmPath + "walk (no right arm).png", 16, 1);
+        addPositionFix("walk (no right arm)", (0, 0), (0, 0));
         addAnim("idle (no right arm)", noRightArmPath + "idle (no right arm).png", 2, FPS * 2);
-        addAnim("jump (no right arm)", animPath + "jump.png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
-        addAnim("fall (no right arm)", animPath + "fall.png", 16, 2, scale = 0.28);
+        addPositionFix("idle (no right arm)", (0, 0), (0, 0));
+        addAnim("jump (no right arm)", noRightArmPath + "jump (no right arm).png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
+        addPositionFix("jump (no right arm)", (0, 0), (0, 0));
+        addAnim("fall (no right arm)", noRightArmPath + "fall (no right arm).png", 16, 2, scale = 0.28);
+        addPositionFix("fall (no right arm)", (0, 0), (0, 0));
     addNoRightArmAnims();
 
     def addNoLeftArmAnims():
