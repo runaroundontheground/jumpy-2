@@ -204,7 +204,7 @@ def loadOtherImages():
 
     toolImgs = {
         "multitool": pygame.image.load(toolPath + "multitool.png").convert_alpha(),
-        "crappy pickaxe": pygame.image.load(toolPath + "crappy pickaxe.png").convert_alpha()
+        "starter pick": pygame.image.load(toolPath + "starter pick.png").convert_alpha()
     };
 
     meleeImgs = {
@@ -271,7 +271,7 @@ icons = {
     "dirt": pygame.Surface.copy(tileImgs["dirt"]),
     "stone": pygame.Surface.copy(tileImgs["stone"]),
     "multitool": pygame.Surface.copy(toolImgs["multitool"]),
-    "crappy pickaxe": pygame.Surface.copy(toolImgs["crappy pickaxe"]),
+    "starter pick": pygame.Surface.copy(toolImgs["starter pick"]),
     "katana": pygame.Surface.copy(meleeImgs["katana"])
 };
 
@@ -600,7 +600,7 @@ items = {
     
     "multitool": toolItem("all", 0.5, 5, "multitool"),
     "epic sword": meleeItem(5, 2),
-    "crappy pickaxe": toolItem("not wood", 0.5, 5, "crappy pickaxe")
+    "starter pick": toolItem("not wood", 0.5, 5, "starter pick")
     #"crappy axe": toolItem("wood", 0.5, 5, "crappy axe")
 }
 
@@ -698,7 +698,7 @@ class Player ():
         this.hotbar = Hotbar();
 
         this.hotbar.slotContents[3] = items["dirt"];
-        this.hotbar.slotContents[1] = items["crappy pickaxe"];
+        this.hotbar.slotContents[1] = items["starter pick"];
         this.hotbar.slotContents[2] = items["stone"];
         this.hotbar.slotContents[0] = items["epic sword"];
        
