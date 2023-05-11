@@ -120,6 +120,7 @@ def loadPlayerAnims():
          # common/often used animations
         addAnim("run", animPath + "run.png", 22, 1, scale = 0.28);
         addPositionFix("run", (0, 0), (0, 0));
+        stickAnim["run"]["handPos"] = [];
         addAnim("walk", animPath + "walk.png", 16, 1);
         addPositionFix("walk", (0, 0), (0, 0));
         addAnim("idle", animPath + "idle.png", 2, FPS*2);
@@ -217,7 +218,6 @@ def loadOtherImages():
         "heavy": pygame.image.load(path + "images/cracks/heavy.png").convert_alpha()
     };
 
-    playerArm = pygame.image.load(path + "animations/player/player (no right arm)/right arm.png").convert_alpha();
 
     for dict, image in crackImgs.items():
         image.fill(black, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
@@ -419,15 +419,56 @@ class toolItem ():
         this.breakType = breakType;
         this.breakPower = breakPower;
         this.useTime = useTime;
+        this.swingTime = 15;
         this.icon = icons[icon];
         this.itemType = itemType;
         this.holdType = holdType;
         this.angle = 0;
+        this.rotateDir = "right";
+        this.range = 5*tileSize;
 
     def use(this):
         
+        def swing():
+            pos = [int(player.x - camera.x), int(player.y - camera.y)];
+            toolPos = pos.copy();
+            toolPos[0] += player.width/2;
+            toolPos[1] += player.height/3;
+            dx = player.x - mouse.x;
+            dy = player.y - mouse.y;
+
+            newImage = pygame.Surface.copy(this.icon);
+
+            if player.swingTime == 0:
+                this.angle = round(math.degrees(math.atan2(-dy, dx)));
+                this.angle -= this.swingTime * 15;
+                player.swingTime = int(this.swingTime / timeScale);
+            else:
+                this.angle -= 15 * timeScale;
+
+            offset = [0, 0];
+            
+            forward = 35
+
+            toolPos[0] -= math.cos(math.radians(this.angle)) * forward;
+            toolPos[1] += math.sin(math.radians(this.angle)) * forward;
+
+            armImg = pygame.Surface.copy(player.rightArm);
+            armPos = [pos[0] + player.width/2, pos[1] + player.height/3];
+            
+            armImg, armRect = rotatePoint(armImg, -this.angle + 90, armPos, pygame.math.Vector2(-10, 3));
+
+            newImage, rect = rotatePoint(newImage, -this.angle + 230, toolPos, pygame.math.Vector2(offset));
+            
+            screen.blit(newImage, rect);
+            screen.blit(armImg, armRect);
+            
+            
+
+        
         if mouse.button == 1:
             
+            swing();
             testChunk((mouse.x, mouse.y));
 
             chunkPos = getChunkPos(mouse.x, mouse.y);
@@ -448,51 +489,92 @@ class toolItem ():
                 x = otherTilePos[0];
                 y = otherTilePos[1];
 
-                totalBreakProgress = player.breakProgress / tile["hardness"];
-                pos = (int(x - camera.x), int(y - camera.y));
-                
-                if totalBreakProgress > 0.66:
-                    screen.blit(crackImgs["heavy"], pos);
-                elif totalBreakProgress > 0.33:
-                    screen.blit(crackImgs["medium"], pos);
-                else:
-                    screen.blit(crackImgs["light"], pos);
-                
-                if player.useTime == 0:
-                    player.breakProgress += this.breakPower;
-                    player.useTime = this.useTime;
-
-                    if tile["type"] == "grass":
-                        chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                if math.dist((player.x, player.y), (mouse.x, mouse.y)) < this.range:
                     
-                    if player.breakProgress >= tile["hardness"]:
-                        spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
-                        chunks[chunkPos][tilePos] = {"type": "air", "hardness": 0};
-                        player.breakProgress = 0;
-                        player.breakingTilePos = "none";
+                
+                    totalBreakProgress = player.breakProgress / tile["hardness"];
+                    pos = (int(x - camera.x), int(y - camera.y));
+                    
+                    if totalBreakProgress > 0.66:
+                        screen.blit(crackImgs["heavy"], pos);
+                    elif totalBreakProgress > 0.33:
+                        screen.blit(crackImgs["medium"], pos);
+                    else:
+                        screen.blit(crackImgs["light"], pos);
+                    
+                    if player.useTime == 0:
+                        player.breakProgress += this.breakPower;
+                        
+
+                        if tile["type"] == "grass":
+                            chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                        
+                        if player.breakProgress >= tile["hardness"]:
+                            spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
+                            chunks[chunkPos][tilePos] = {"type": "air", "hardness": 0};
+                            player.breakProgress = 0;
+                            player.breakingTilePos = "none";
+            if player.useTime == 0:
+                player.useTime = int(this.useTime / timeScale);
 
     def handRender(this):
 
         newImage = pygame.Surface.copy(this.icon);
 
-        pos = [int(player.x - camera.x + 13), int(player.y - camera.y + 20)];
+        pos = [int(player.x - camera.x), int(player.y - camera.y)];
+        
+        toolPos = pos.copy();        
+        if not player.flipH:
+            toolPos[0] += newImage.get_width() - 10;
+            if this.angle > 200 or this.angle < 160:
+                this.angle = 180;
+            else:
+                if this.angle > 190:
+                    this.rotateDir = "left";
+                if this.angle < 170:
+                    this.rotateDir = "right";
 
-        dx = player.x - mouse.x;
-        dy = player.y - mouse.y;
+                if this.rotateDir == "right":
+                    this.angle += player.xv / 5;
+                if this.rotateDir == "left":
+                    this.angle -= player.xv / 5;
+        else:
+            if this.angle > 200 or this.angle < 160:
+                this.angle = 180;
+            else:
+                if this.angle > 190:
+                    this.rotateDir = "left";
+                if this.angle < 170:
+                    this.rotateDir = "right";
 
-        desiredAngle = round(math.degrees(math.atan2(-dy, dx)));
+                if this.rotateDir == "right":
+                    this.angle -= player.xv / 5;
+                if this.rotateDir == "left":
+                    this.angle += player.xv / 5;
 
-        this.angle = changeAngleSmoothly(this.angle, desiredAngle);
+        if player.flipH:
+                newImage = pygame.transform.flip(newImage, True, False);
+
+        
         offset = [0, 0];
         forward = 20;
-        pos[0] -= math.cos(math.radians(this.angle)) * forward;
-        pos[1] += math.sin(math.radians(this.angle)) * forward;
+        
 
-        #newImage = pygame.transform.flip(newImage, True, False);
+        toolPos[0] -= math.cos(math.radians(this.angle)) * forward + 15;
+        toolPos[1] += math.sin(math.radians(this.angle)) * forward + 35;
 
-        newImage, rect = rotatePoint(newImage, -this.angle - 200, pygame.math.Vector2(pos[0], pos[1]), pygame.math.Vector2(offset));
+
+        armImg = pygame.Surface.copy(player.rightArm);
+        armPos = [pos[0] + player.width/2, pos[1] + player.height/3];
+        
+        armImg, armRect = rotatePoint(armImg, -this.angle + 90, armPos, pygame.math.Vector2(-10, 3));
+
+       
+        
+        newImage, rect = rotatePoint(newImage, -this.angle + 230, toolPos, pygame.math.Vector2(offset));
         
         screen.blit(newImage, rect);
+        screen.blit(armImg, armRect);
 
 class meleeItem ():
     def __init__(this, damage = 3, attackRange = 2, icon = "katana", imgPath = path + "animations/player/melee/katana (in hand).png", itemType = "melee",
@@ -525,7 +607,8 @@ class meleeItem ():
         dy = player.y - mouse.y;
 
         desiredAngle = round(math.degrees(math.atan2(-dy, dx)));
-
+        
+        
         this.angle = changeAngleSmoothly(this.angle, desiredAngle);
         
         if this.angle < 90 or this.angle > 270: player.flipH = True; flipV = False;
@@ -691,9 +774,15 @@ class Player ():
 
         this.anim = "idle";
         this.state = "idle";
-        this.hideArm = "none";
+        this.hideArm = "none";  
 
         this.image = stickAnim;
+
+        this.rightArm = pygame.image.load(path + "animations/player/right arm.png").convert_alpha();
+        this.leftArm = pygame.image.load(path + "animations/player/left arm.png").convert_alpha();
+        scale = 0.3;
+        this.rightArm = pygame.transform.scale_by(this.rightArm, scale);
+        this.leftArm = pygame.transform.scale_by(this.leftArm, scale);
         
         this.hotbar = Hotbar();
 
@@ -718,6 +807,7 @@ class Player ():
         }
 
         this.useTime = 0;
+        this.swingTime = 0;
         this.breakProgress = 0;
         this.breakingTilePos = 0; # will be "getTile" later
         this.breakPower = 0;
@@ -1530,6 +1620,7 @@ def playerFrame () :
             
         if keys[pygame.K_i]: timeScale = 0.1;
         if keys[pygame.K_o]: timeScale = 1.0;
+        if keys[pygame.K_h]: timeScale = 0.0;
         if keys[pygame.K_g]: player.allowDebugRects = True;
         if keys[pygame.K_h]: player.allowDebugRects = False;
 
@@ -1540,6 +1631,8 @@ def playerFrame () :
             player.useTime -= 1;
         if player.rollCD > 0:
             player.rollCD -= 1;
+        if player.swingTime > 0:
+            player.swingTime -= 1;
     playerTimers();
     
     if player.hideArm == "both":
@@ -1753,39 +1846,42 @@ running = True;
 pygame.time.set_timer(animEvent, int(1000 / FPS / timeScale));
 while running: # game loop
 
-    screen.fill(skyblue);
-    
     keys = pygame.key.get_pressed();
-    
-    mousePos = pygame.mouse.get_pos();
-    mouse.absX, mouse.absY = mousePos[0], mousePos[1];
-    
-    mouse.x = mouse.absX + camera.x;
-    mouse.y = mouse.absY + camera.y;
-    mouse.pos = (mouse.x, mouse.y);
-    
-    cameraChunk = getChunkPos(camera.x, camera.y);
-    
-    renderTiles(cameraChunk);
+    if timeScale > 0:
+        screen.fill(skyblue);
+        
+        
+        
+        mousePos = pygame.mouse.get_pos();
+        mouse.absX, mouse.absY = mousePos[0], mousePos[1];
+        
+        mouse.x = mouse.absX + camera.x;
+        mouse.y = mouse.absY + camera.y;
+        mouse.pos = (mouse.x, mouse.y);
+        
+        cameraChunk = getChunkPos(camera.x, camera.y);
+        
+        renderTiles(cameraChunk);
 
-    playerFrame();
-    if len(groundItems) > 400:
-        groundItems.remove(0);
-    i = len(groundItems) - 1;
-    while i > -1:
-        item = groundItems[i];
-        groundItemsFrame(item);
-        i -= 1;
-    
-    
-    updateCamera();
-    
-    test = pygame.Rect(mouse.x-camera.x, mouse.y-camera.y, 5, 5);
-    pygame.draw.rect(screen, green, test);
-    
-    mouse.pressed = False;
-    runAnims = False;
-
+        playerFrame();
+        if len(groundItems) > 400:
+            groundItems.remove(0);
+        i = len(groundItems) - 1;
+        while i > -1:
+            item = groundItems[i];
+            groundItemsFrame(item);
+            i -= 1;
+        
+        
+        updateCamera();
+        
+        test = pygame.Rect(mouse.x-camera.x, mouse.y-camera.y, 5, 5);
+        pygame.draw.rect(screen, green, test);
+        
+        mouse.pressed = False;
+        runAnims = False;
+    else:
+        if keys[pygame.K_l]: timeScale = 1.0;
     for event in pygame.event.get():
     
         if event.type == pygame.QUIT:
@@ -1806,7 +1902,7 @@ while running: # game loop
             if player.hotbar.slot >= 5:
                 player.hotbar.slot = 4;
 
-        if event.type == animEventInt:
+        if event.type == animEventInt and timeScale > 0:
             
             runAnims = True;
             pygame.time.set_timer(animEventInt, abs(int(1000 / FPS / timeScale) - 5));
