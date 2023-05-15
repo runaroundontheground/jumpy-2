@@ -91,7 +91,7 @@ def loadPlayerAnims():
         width = image.get_width();
         height = image.get_height();
 
-        image = pygame.transform.scale(image, (int(width * scale), int(height * scale)))
+        image = pygame.transform.scale(image, (round(width * scale), round(height * scale)))
 
         width = image.get_width() / frames;
         height = image.get_height();
@@ -121,7 +121,7 @@ def loadPlayerAnims():
             pos2 # when animation is flipped
         ];
 
-    def addArmPos(name = "run", list = []):
+    def addArmPos(name, list):
         stickAnim[name]["armPos"] = list;
 
     def addNormalAnims():
@@ -132,7 +132,6 @@ def loadPlayerAnims():
         addPositionFix("walk", (0, 0), (0, 0));
         addAnim("idle", animPath + "idle.png", 2, FPS*2);
         addPositionFix("idle", (0, 0), (0, 0));
-        addArmPos("idle", [(42, 78), (44, 77)]);
         addAnim("jump", animPath + "jump.png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
         addPositionFix("jump", (0, 0), (0, 0));
         addAnim("fall", animPath + "fall.png", 16, 2, scale = 0.28);
@@ -184,6 +183,7 @@ def loadPlayerAnims():
         addPositionFix("walk (no right arm)", (0, 0), (0, 0));
         addAnim("idle (no right arm)", noRightArmPath + "idle (no right arm).png", 2, FPS * 2);
         addPositionFix("idle (no right arm)", (0, 0), (0, 0));
+        addArmPos("idle (no right arm)", [(15, 22), (15, 19)]);
         addAnim("jump (no right arm)", noRightArmPath + "jump (no right arm).png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
         addPositionFix("jump (no right arm)", (0, 0), (0, 0));
         addAnim("fall (no right arm)", noRightArmPath + "fall (no right arm).png", 16, 2, scale = 0.28);
@@ -472,8 +472,11 @@ class toolItem ():
             
             pos = [int(player.x - camera.x), int(player.y - camera.y)];
             pos[0] += player.armPos[0];
+            pos[1] += player.armPos[1];
+           
+            pygame.draw.rect(screen, yellow, (pos[0], pos[1], 5, 5))
             
-            offset = [0, 0];
+            offset = [10, 10];
 
             armAndToolSurf, rect = rotatePoint(armAndToolSurf, this.angle, pos, pygame.math.Vector2(offset));
             
@@ -1129,7 +1132,7 @@ def playerFrame () :
     
 
     def hotbarStuff():
-        player.armPos = player.image[player.anim]["armPos"][player.image[player.anim]["currentFrame"]];
+        
         hotbarRect.x = round(screenWidth/2 - hotbarRect.width * 3);
         hotbarRect.y = 50;
 
@@ -1676,6 +1679,10 @@ def playerFrame () :
         elif mouse.x < player.x: player.flipH = True;
     
     def updateAnimation():
+
+        player.armPos = anim["armPos"][anim["currentFrame"]];
+        
+
         if not anim["singleFrame"]:
 
             playInReverse = False;
@@ -1724,8 +1731,6 @@ def playerFrame () :
     
                 
     def animate () :
-       
-
         animRect = pygame.Rect(anim["currentFrame"] * anim["width"], 0, anim["width"], anim["height"]);
 
         image = anim["image"];
@@ -1755,6 +1760,7 @@ def playerFrame () :
         
 
         screen.blit(image, rect);
+        screen.blit(image, (0, 0));
         
         if runAnims:
             updateAnimation();
@@ -1865,6 +1871,9 @@ setAnimTimer();
 while running: # game loop
 
     keys = pygame.key.get_pressed();
+    """
+    do thing to create keys pressed
+    """
     if timeScale > 0:
         screen.fill(skyblue);
         
@@ -1903,14 +1912,19 @@ while running: # game loop
         if keys[pygame.K_m]:
             mousePos = pygame.mouse.get_pos();
             mouse.absX, mouse.absY = mousePos[0], mousePos[1];
-            mouse.x = mouse.absX + camera.x;
-            mouse.y = mouse.absY + camera.y;
 
             img = player.image[player.anim]["image"];
-            x = img.get_width() - (player.x - mouse.x);
-            y = img.get_height() - (player.y - mouse.y);
+            x = mouse.absX;
+            y = mouse.absY;
             print(str(x) + ", " + str(y));
+            
             print(player.image[player.anim]["currentFrame"]);
+            player.armPos = (x, y);
+            pos = [int(player.x - camera.x), int(player.y - camera.y)];
+            pos[0] += player.armPos[0];
+            pos[1] += player.armPos[1];
+           
+            pygame.draw.rect(screen, yellow, (pos[0], pos[1], 5, 5))
     for event in pygame.event.get():
     
         if event.type == pygame.QUIT:
@@ -1936,11 +1950,12 @@ while running: # game loop
             runAnims = True;
             pygame.time.set_timer(animEventInt, abs(int(1000 / FPS / timeScale) - 5));
             
-                        
-                
-                
+    """                 
+    for i in range(len[keysPressed]):
+        keysPressed[i] = False;
+    """
                  
-                    
+    
     
     pygame.display.flip();
     clock.tick(FPS);
