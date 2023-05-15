@@ -45,6 +45,8 @@ groundItems = [];
 
 animEventInt = pygame.event.custom_type();
 animEvent = pygame.event.Event(animEventInt);
+def setAnimTimer():
+    pygame.time.set_timer(animEvent, int(1000 / FPS / timeScale));
 runAnims = False;
 
 
@@ -104,11 +106,14 @@ def loadPlayerAnims():
             "height": height,
             "singleFrame": singleFrame,
             "repeat": repeat,
-            "posFix": [(0, 0), (0, 0)]
+            "posFix": [(0, 0), (0, 0)],
+            "armPos": []
         }
 
         if not repeat:
             stickAnim[name]["nextAnim"] = nextAnim;
+        for num in range(stickAnim[name]["frames"]):
+            stickAnim[name]["armPos"].append((0, 0));
 
     def addPositionFix(name, pos1 = (0, 0), pos2 = (0, 0)):
         stickAnim[name]["posFix"] = [
@@ -116,15 +121,18 @@ def loadPlayerAnims():
             pos2 # when animation is flipped
         ];
 
+    def addArmPos(name = "run", list = []):
+        stickAnim[name]["armPos"] = list;
+
     def addNormalAnims():
          # common/often used animations
         addAnim("run", animPath + "run.png", 22, 1, scale = 0.28);
         addPositionFix("run", (0, 0), (0, 0));
-        stickAnim["run"]["handPos"] = [];
         addAnim("walk", animPath + "walk.png", 16, 1);
         addPositionFix("walk", (0, 0), (0, 0));
         addAnim("idle", animPath + "idle.png", 2, FPS*2);
         addPositionFix("idle", (0, 0), (0, 0));
+        addArmPos("idle", [(42, 78), (44, 77)]);
         addAnim("jump", animPath + "jump.png", 19, 1, repeat = False, nextAnim = "fall", scale = 0.28);
         addPositionFix("jump", (0, 0), (0, 0));
         addAnim("fall", animPath + "fall.png", 16, 2, scale = 0.28);
@@ -428,40 +436,48 @@ class toolItem ():
         this.range = 5*tileSize;
 
     def use(this):
-        
+        # so here's how we fix:
+        """
+        make a new transparent surface
+        blit arm and item onto it
+        rotate
+        render
+        yay
+        """
         def swing():
-            pos = [int(player.x - camera.x), int(player.y - camera.y)];
-            toolPos = pos.copy();
-            toolPos[0] += player.width/2;
-            toolPos[1] += player.height/3;
-            dx = player.x - mouse.x;
-            dy = player.y - mouse.y;
-
-            newImage = pygame.Surface.copy(this.icon);
-
-            if player.swingTime == 0:
-                this.angle = round(math.degrees(math.atan2(-dy, dx)));
-                this.angle -= this.swingTime * 15;
-                player.swingTime = int(this.swingTime / timeScale);
-            else:
-                this.angle -= 15 * timeScale;
-
-            offset = [0, 0];
             
-            forward = 35
+            
+            
 
-            toolPos[0] -= math.cos(math.radians(this.angle)) * forward;
-            toolPos[1] += math.sin(math.radians(this.angle)) * forward;
-
+            toolImg = pygame.Surface.copy(this.icon);
             armImg = pygame.Surface.copy(player.rightArm);
-            armPos = [pos[0] + player.width/2, pos[1] + player.height/3];
-            
-            armImg, armRect = rotatePoint(armImg, -this.angle + 90, armPos, pygame.math.Vector2(-10, 3));
 
-            newImage, rect = rotatePoint(newImage, -this.angle + 230, toolPos, pygame.math.Vector2(offset));
+            def doAngle():
+                if player.swingTime == 0:
+                    dx = player.x - mouse.x;
+                    dy = player.y - mouse.y;    
+                    this.angle = round(math.degrees(math.atan2(-dy, dx)));
+                    this.angle -= this.swingTime * 15;
+                    player.swingTime = int(this.swingTime / timeScale);
+                else:
+                    this.angle -= 15 * timeScale;
+            doAngle();
             
-            screen.blit(newImage, rect);
-            screen.blit(armImg, armRect);
+            armAndToolSurf = pygame.Surface([armImg.get_width() + toolImg.get_width(), armImg.get_height() + toolImg.get_height()*1.2], pygame.SRCALPHA);
+
+            armAndToolSurf.blit(armImg, (0, toolImg.get_height()/2.5));
+            armAndToolSurf.blit(toolImg, (armImg.get_width() - 13, toolImg.get_height()/2.5 - 8));
+
+            armAndToolSurf = pygame.transform.flip(armAndToolSurf, False, True);
+            
+            pos = [int(player.x - camera.x), int(player.y - camera.y)];
+            pos[0] += player.armPos[0];
+            
+            offset = [0, 0];
+
+            armAndToolSurf, rect = rotatePoint(armAndToolSurf, this.angle, pos, pygame.math.Vector2(offset));
+            
+            screen.blit(armAndToolSurf, rect);
             
             
 
@@ -558,7 +574,7 @@ class toolItem ():
         
         offset = [0, 0];
         forward = 20;
-        
+     
 
         toolPos[0] -= math.cos(math.radians(this.angle)) * forward + 15;
         toolPos[1] += math.sin(math.radians(this.angle)) * forward + 35;
@@ -783,6 +799,7 @@ class Player ():
         scale = 0.3;
         this.rightArm = pygame.transform.scale_by(this.rightArm, scale);
         this.leftArm = pygame.transform.scale_by(this.leftArm, scale);
+        this.armPos = (0, 0);
         
         this.hotbar = Hotbar();
 
@@ -1112,7 +1129,7 @@ def playerFrame () :
     
 
     def hotbarStuff():
-        
+        player.armPos = player.image[player.anim]["armPos"][player.image[player.anim]["currentFrame"]];
         hotbarRect.x = round(screenWidth/2 - hotbarRect.width * 3);
         hotbarRect.y = 50;
 
@@ -1623,6 +1640,7 @@ def playerFrame () :
         if keys[pygame.K_h]: timeScale = 0.0;
         if keys[pygame.K_g]: player.allowDebugRects = True;
         if keys[pygame.K_h]: player.allowDebugRects = False;
+        
 
     playerDebug();
     
@@ -1843,7 +1861,7 @@ def renderTiles (chunkPos) :
                 
                 
 running = True;
-pygame.time.set_timer(animEvent, int(1000 / FPS / timeScale));
+setAnimTimer();
 while running: # game loop
 
     keys = pygame.key.get_pressed();
@@ -1881,7 +1899,18 @@ while running: # game loop
         mouse.pressed = False;
         runAnims = False;
     else:
-        if keys[pygame.K_l]: timeScale = 1.0;
+        if keys[pygame.K_l]: timeScale = 1.0; setAnimTimer();
+        if keys[pygame.K_m]:
+            mousePos = pygame.mouse.get_pos();
+            mouse.absX, mouse.absY = mousePos[0], mousePos[1];
+            mouse.x = mouse.absX + camera.x;
+            mouse.y = mouse.absY + camera.y;
+
+            img = player.image[player.anim]["image"];
+            x = img.get_width() - (player.x - mouse.x);
+            y = img.get_height() - (player.y - mouse.y);
+            print(str(x) + ", " + str(y));
+            print(player.image[player.anim]["currentFrame"]);
     for event in pygame.event.get():
     
         if event.type == pygame.QUIT:
