@@ -1893,9 +1893,9 @@ def renderTiles (chunkPos) :
                 renderX = x - camera.x;
                 renderY = y - camera.y;
                 
-                if screenRect.collidepoint(renderX, renderY):
-                        
-                    screen.blit(tileImgs[tile["type"]], (renderX, renderY));
+                #if screenRect.collidepoint(renderX, renderY):
+                # hey this doesn't need to be here? probably?        
+                screen.blit(tileImgs[tile["type"]], (renderX, renderY));
                     
                         
         currentChunk += 1;
