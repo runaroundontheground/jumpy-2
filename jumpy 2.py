@@ -202,7 +202,7 @@ def loadPlayerAnims():
         addPositionFix("wallhang", (0, 0), (0, 0));
         addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
         addPositionFix("wallhang (reach)", (0, 0), (0, 0));
-        addAnim("climb up", noImage, singleFrame = True);
+        addAnim("climb up", animPath + "climb up.png", singleFrame = True);
         addPositionFix("climb up", (0, 0), (0, 0));
 
     def addSwing():
