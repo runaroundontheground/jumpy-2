@@ -4,7 +4,10 @@ import pygame, math, sys, random, os, json;
 pygame.init();
 
 
-
+keys = pygame.key.get_pressed();
+keysPressed = [];
+for num in range(len(keys)):
+    keysPressed.append(False);
 
 screenWidth, screenHeight = 1200, 800; # normally 600, 400
 
@@ -1906,11 +1909,14 @@ def renderTiles (chunkPos) :
 running = True;
 setAnimTimer();
 while running: # game loop
+    tempKeys = pygame.key.get_pressed();
+    
+    for num in range(len(tempKeys)):
+        if not keys[num] and not keysPressed[num]:
+            keysPressed[num] = True;
 
     keys = pygame.key.get_pressed();
-    """
-    do thing to create keys pressed
-    """
+    
     if timeScale > 0:
         screen.fill(skyblue);
         
@@ -1987,10 +1993,10 @@ while running: # game loop
             runAnims = True;
             pygame.time.set_timer(animEventInt, abs(int(1000 / FPS / timeScale) - 5));
             
-    """                 
-    for i in range(len[keysPressed]):
-        keysPressed[i] = False;
-    """
+    
+    for num in range(len(keysPressed)):
+        keysPressed[num] = False;
+    
                  
     
     
