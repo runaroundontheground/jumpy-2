@@ -839,7 +839,7 @@ class Player ():
 
         this.rightArm = pygame.image.load(path + "animations/player/right arm.png").convert_alpha();
         this.leftArm = pygame.image.load(path + "animations/player/left arm.png").convert_alpha();
-        scale = 0.3;
+        scale = 0.35;
         this.rightArm = pygame.transform.scale_by(this.rightArm, scale);
         this.leftArm = pygame.transform.scale_by(this.leftArm, scale);
         this.armPos = (0, 0);
