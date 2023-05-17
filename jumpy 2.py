@@ -1759,13 +1759,13 @@ def playerFrame () :
             player.anim = "swing (neutral)";
     
         player.angle = grapple.angle - 90;
-
-    if player.anim == "swing (neutral)" or player.anim == "swing (forward)" or player.anim == "swing (backward)":
-        player.angle = 0;
-        if player.yv < 0:
-            player.anim = "jump";
-        else:
-            player.anim = "fall";
+    else:
+        if player.anim == "swing (neutral)" or player.anim == "swing (forward)" or player.anim == "swing (backward)":
+            player.angle = 0;
+            if player.yv < 0:
+                player.anim = "jump";
+            else:
+                player.anim = "fall";
 
     def updateAnimation():
 
