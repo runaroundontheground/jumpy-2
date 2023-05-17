@@ -5,9 +5,16 @@ pygame.init();
 
 
 keys = pygame.key.get_pressed();
-keysPressed = [];
-for num in range(len(keys)):
-    keysPressed.append(False);
+keysPressed = {
+    "a": False,
+    "w": False,
+    "s": False,
+    "d": False,
+    "space": False,
+    "shift": False,
+    "ctrl": False
+};
+
 
 screenWidth, screenHeight = 1200, 800; # normally 600, 400
 
@@ -1143,7 +1150,7 @@ def playerFrame () :
 
             if bottomLeft or bottomRight:
 
-                if player.state == "slide" or player.state == "crouch": slideHeight = 0;
+                if player.height == tileSize: slideHeight = 0;
                 else: slideHeight = tileSize;
 
                 if bottomRight and not getTile(player.x + player.width, player.y + slideHeight):
@@ -1164,7 +1171,7 @@ def playerFrame () :
         player.tiles.left = getTile(player.x - 1, player.y + thing);
         player.tiles.right = getTile(player.x + player.width + 1, player.y + thing);
 
-        if not player.state == "slide" and not player.state == "crouch":
+        if player.height != tileSize:
             if getTile(player.x - 1, player.y + tileSize + thing): player.tiles.left = True;
             if getTile(player.x + player.width + 1, player.y + tileSize + thing): player.tiles.right = True;
     findChunksAndTiles();
@@ -1174,6 +1181,7 @@ def playerFrame () :
     space = keys[pygame.K_SPACE];
     up = keys[pygame.K_w];
     down = keys[pygame.K_s];
+
     
 
     def hotbarStuff():
@@ -1393,6 +1401,8 @@ def playerFrame () :
                 player.state = "roll";
                 player.anim = "roll";
                 player.fakeAngle = 0;
+                player.height = tileSize;
+                player.y += tileSize;
 
                 if right:
                     player.rollDir = "right";
@@ -1417,14 +1427,22 @@ def playerFrame () :
                 if player.rollDir == "left":
                     player.xv = -player.maxXV;
                     player.fakeAngle += player.rollAngleSpeed * timeScale;
-
                 if abs(player.fakeAngle) >= 450:
                     player.timers["rollCD"] = FPS * 0.5;
-                    player.state = "idle";
-                    if player.tiles.bottom:
-                        player.anim = "idle";
+                    if player.tiles.top:
+                        player.state = "crouch";
+                        player.anim = "crouch";
                     else:
-                        player.anim = "fall";
+                        if player.tiles.bottom:
+                            player.anim = "idle";
+                            player.state = "idle";
+                            player.height = tileSize * 2;
+                            player.y -= tileSize;
+                        else:
+                            player.anim = "fall";
+                            player.state = "idle";
+                            player.height = tileSize * 2;
+                            player.y -= tileSize;
                     player.fakeAngle = 0;
 
 
@@ -1454,7 +1472,7 @@ def playerFrame () :
             if player.tiles.bottom and player.yv == 0:
 
                 # do animation checks
-                if player.state != "roll" and player.state != "slide":
+                if player.state != "roll" and player.state != "slide" and player.state != "crouch":
                     if player.xv == 0:
                         player.anim = "idle";
                         player.state = player.anim;
@@ -1482,7 +1500,7 @@ def playerFrame () :
                     player.yv = player.jumpPower;
                     player.xv = player.jumpPower / -2;
 
-        if down:
+        if down and player.state != "crouch" and player.state != "slide":
             if player.tiles.bottom:
                 if abs(player.xv) > player.maxXV / 1.1:
                     if player.state != "slide":
@@ -1915,12 +1933,13 @@ setAnimTimer();
 while running: # game loop
     tempKeys = pygame.key.get_pressed();
     
-    for num in range(len(tempKeys)):
-        if not keys[num] and not keysPressed[num]:
-            keysPressed[num] = True;
+    up = pygame.K_w;
+    def doKeyPress(key, key2):
+        if not tempKeys[key] and not keysPressed[key2]:
+            keysPressed[key2] = True;
+    doKeyPress(up, "w");
 
     keys = pygame.key.get_pressed();
-    
     if timeScale > 0:
         screen.fill(skyblue);
         
@@ -1998,8 +2017,9 @@ while running: # game loop
             pygame.time.set_timer(animEventInt, abs(int(1000 / FPS / timeScale) - 5));
             
     
-    for num in range(len(keysPressed)):
-        keysPressed[num] = False;
+    for keyName, keyValue in keysPressed.items():
+        keysPressed[keyName] = False;
+        keyValue = False;
     
                  
     
