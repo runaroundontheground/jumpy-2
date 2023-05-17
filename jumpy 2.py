@@ -1740,6 +1740,24 @@ def playerFrame () :
         if mouse.x > player.x: player.flipH = False;
         elif mouse.x < player.x: player.flipH = True;
     
+
+    if grapple.hooked:
+        if grapple.angularVel > 0:
+            if player.flipH:
+                player.anim = "swing (backward)";
+            else:
+                player.anim = "swing (forward)";
+
+        if grapple.angularVel < 0:
+            if player.flipH:
+                player.anim = "swing (forward)";
+            else:
+                player.anim = "swing (backward)";
+        if grapple.angularVel > -0.01 and grapple.angularVel < 0.01:
+            player.anim = "swing (neutral)";
+
+
+
     def updateAnimation():
 
         player.armPos = anim["armPos"][anim["currentFrame"]];
