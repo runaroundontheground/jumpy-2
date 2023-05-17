@@ -1762,10 +1762,7 @@ def playerFrame () :
     else:
         if player.anim == "swing (neutral)" or player.anim == "swing (forward)" or player.anim == "swing (backward)":
             player.angle = 0;
-            if player.yv < 0:
-                player.anim = "jump";
-            else:
-                player.anim = "fall";
+            player.anim = "fall";
 
     def updateAnimation():
 
