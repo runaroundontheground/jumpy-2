@@ -217,8 +217,10 @@ def loadPlayerAnims():
 
     def addSwing():
          # this one doesn't have a left arm
-        addAnim("swing", noImage, singleFrame = True, scale = 1);
-        addPositionFix("swing", (0, 0), (0, 0));
+        addAnim("swing (neutral)", animPath + "swing (neutral).png", singleFrame = True);
+        addPositionFix("swing (neutral)", (0, 0), (0, 0));
+        addAnim("swing (forward)", animPath + "swing (forward).png", singleFrame = True);
+        addAnim("swing (backward)", animPath + "swing (backward).png", singleFrame = True);
          # no arms
         # not made, don't even have the animation made at all yet
 
