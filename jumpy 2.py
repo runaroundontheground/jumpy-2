@@ -94,7 +94,7 @@ def loadPlayerAnims():
         width = image.get_width();
         height = image.get_height();
 
-        image = pygame.transform.scale(image, (round(width * scale), round(height * scale)))
+        image = pygame.transform.scale(image, (width * scale, height * scale))
 
         width = image.get_width() / frames;
         height = image.get_height();
@@ -202,11 +202,11 @@ def loadPlayerAnims():
         addAnim("wallclimb", animPath + "wallclimb.png", 14, 4);
         addPositionFix("wallclimb", (0, 0), (0, 0));
         addAnim("wallhang", animPath + "wallhang.png", singleFrame = True);
-        addPositionFix("wallhang", (0, 0), (0, 0));
+        addPositionFix("wallhang", (0, -10), (0, -10));
         addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
-        addPositionFix("wallhang (reach)", (0, 0), (0, 0));
+        addPositionFix("wallhang (reach)", (0, -10), (0, -10));
         addAnim("climb up", animPath + "climb up.png", 12);
-        addPositionFix("climb up", (0, 0), (0, 0));
+        addPositionFix("climb up", (10, -13), (-10, -13));
 
     def addSwing():
          # this one doesn't have a left arm
@@ -526,7 +526,7 @@ class toolItem ():
 
         
         if mouse.button == 1:
-            print(player.breakProgress);
+            
             swing();
             testChunk((mouse.x, mouse.y));
 
@@ -870,7 +870,8 @@ class Player ():
             "useTime": 0,
             "swingTime": 0,
             "toolUseTime": 5,
-            "rollCD": 0
+            "rollCD": 0,
+            "climb up": 0
         }
 
         this.breakingTilePos = 0; # will be "getTile" later
@@ -1453,7 +1454,7 @@ def playerFrame () :
             if player.tiles.bottom and player.yv == 0:
 
                 # do animation checks
-                if player.state != "roll":
+                if player.state != "roll" and player.state != "slide":
                     if player.xv == 0:
                         player.anim = "idle";
                         player.state = player.anim;
@@ -1574,8 +1575,15 @@ def playerFrame () :
                     player.yv = YV;
                     player.abilitesUsed["wallclimb"] = False;
                     player.state = "run";
-                    if YV != player.jumpPower: player.anim = "jump";
+                    if player.yv < 0: player.anim = "jump";
                     player.angle = 0;
+
+                def initClimbUp():
+                    player.anim = "climb up";
+                    player.state = "climb up";
+                    player.timers["climb up"] = 12 / timeScale;
+                    player.image[player.anim]["currentFrame"] = 0;
+                    #player.y -= tileSize;
 
                 unstuckPlayerX();
                 if player.yv > 5: 
@@ -1603,12 +1611,13 @@ def playerFrame () :
 
                             if left: 
                                 player.anim = "wallhang (reach)";
+                            if right and up:
+                                initClimbUp();
+
 
                     if space:
                         if left: jumpOff(-3);
-                    if right and up and grabby:
-                        player.anim = "climb up";
-                        player.state = "climb up";
+                        
 
                 if player.tiles.left:
                     pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv - tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
@@ -1625,30 +1634,23 @@ def playerFrame () :
 
                             if right:
                                 player.anim = "wallhang (reach)";
-
+                            if left and up:
+                                initClimbUp();
                     if space:
                         if right: jumpOff(3);
-                    if left and up and grabby:
-                        player.anim = "climb up";
-                        player.state = "climb up";
                 
                         
 
                 if player.state == "climb up" and not player.tiles.top:
-                    if player.timers["climb up"] == 0:
-                        player.y -= 3;
-                        if player.tiles.right:
-                            player.angle -= 3;
-                        if player.tiles.left:
-                            player.angle += 3;
+                    if player.timers["climb up"] != 0:
+                        player.y -= 3 * timeScale;
                     else:
-                        player.angle = 0;
-                        
+                        player.lockX = False;
 
-                if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
+                if (not player.tiles.right and not player.tiles.left) or (player.tiles.bottom and player.state != "climb up"):
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
-                    player.anim = "idle"; player.state = "idle";
+                    #player.anim = "idle"; player.state = "idle";
                     player.angle = 0;
         doWallclimb();
 
@@ -1694,8 +1696,8 @@ def playerFrame () :
     
     def playerTimers():
         for key, timer in player.timers.items():
-            if timer > 0:
-                timer -= 1;
+            if player.timers[key] > 0:
+                player.timers[key] -= 1;
     playerTimers();
     
     if player.hideArm == "both":
