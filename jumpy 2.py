@@ -205,7 +205,7 @@ def loadPlayerAnims():
         addPositionFix("wallhang", (0, 0), (0, 0));
         addAnim("wallhang (reach)", animPath + "wallhang (reach).png", singleFrame = True);
         addPositionFix("wallhang (reach)", (0, 0), (0, 0));
-        addAnim("climb up", animPath + "climb up.png", singleFrame = True);
+        addAnim("climb up", animPath + "climb up.png", 12);
         addPositionFix("climb up", (0, 0), (0, 0));
 
     def addSwing():
@@ -425,9 +425,9 @@ class tileItem ():
                 else:
                     screen.blit(crackImgs["light"], pos);
                 
-                if player.useTime == 0:
+                if player.timers["useTime"] == 0:
                     player.breakProgress += player.breakPower;
-                    player.useTime = player.toolUseTime;
+                    player.timers["useTime"] = player.timers["toolUseTime"];
 
                     if tile["type"] == "grass":
                         chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
@@ -493,12 +493,12 @@ class toolItem ():
             armImg = pygame.Surface.copy(player.rightArm);
 
             def doAngle():
-                if player.swingTime == 0:
+                if player.timers["swingTime"] == 0:
                     dx = player.x - mouse.x;
                     dy = player.y - mouse.y;    
                     this.angle = round(math.degrees(math.atan2(-dy, dx)));
                     this.angle -= this.swingTime * 15;
-                    player.swingTime = int(this.swingTime / timeScale);
+                    player.timers["swingTime"] = int(this.swingTime / timeScale);
                 else:
                     this.angle -= 15 * timeScale;
             doAngle();
@@ -526,7 +526,7 @@ class toolItem ():
 
         
         if mouse.button == 1:
-            
+            print(player.breakProgress);
             swing();
             testChunk((mouse.x, mouse.y));
 
@@ -561,7 +561,7 @@ class toolItem ():
                     else:
                         screen.blit(crackImgs["light"], pos);
                     
-                    if player.useTime == 0:
+                    if player.timers["useTime"] == 0:
                         player.breakProgress += this.breakPower;
                         
 
@@ -573,8 +573,8 @@ class toolItem ():
                             chunks[chunkPos][tilePos] = {"type": "air", "hardness": 0};
                             player.breakProgress = 0;
                             player.breakingTilePos = "none";
-            if player.useTime == 0:
-                player.useTime = int(this.useTime / timeScale);
+            if player.timers["useTime"] == 0:
+                player.timers["useTime"] = int(this.useTime / timeScale);
 
     def handRender(this):
 
@@ -771,7 +771,7 @@ class Tiles ():
 class Hotbar ():
     def __init__(this):
         this.slot = 1;
-        this.slotContents = {
+        this.contents = {
             0: "none",
             1: "none",
             2: "none",
@@ -828,7 +828,7 @@ class Player ():
         };
 
         this.width = tileSize;
-        this.height = this.width * 2;
+        this.height = tileSize * 2;
         this.flipH = False;
 
         this.anim = "idle";
@@ -846,10 +846,10 @@ class Player ():
         
         this.hotbar = Hotbar();
 
-        this.hotbar.slotContents[3] = items["dirt"];
-        this.hotbar.slotContents[1] = items["starter pick"];
-        this.hotbar.slotContents[2] = items["stone"];
-        this.hotbar.slotContents[0] = items["epic sword"];
+        this.hotbar.contents[3] = items["dirt"];
+        this.hotbar.contents[1] = items["starter pick"];
+        this.hotbar.contents[2] = items["stone"];
+        this.hotbar.contents[0] = items["epic sword"];
        
 
         this.hotbar.slot = 0;
@@ -866,14 +866,18 @@ class Player ():
             "open": False
         }
 
-        this.useTime = 0;
-        this.swingTime = 0;
-        this.breakProgress = 0;
+        this.timers = {
+            "useTime": 0,
+            "swingTime": 0,
+            "toolUseTime": 5,
+            "rollCD": 0
+        }
+
         this.breakingTilePos = 0; # will be "getTile" later
         this.breakPower = 0;
-        this.toolUseTime = 5;
+        this.breakProgress = 0;
+        
 
-        this.rollCD = 0;
 
 class Grapple () :
     def __init__(this):
@@ -1176,7 +1180,7 @@ def playerFrame () :
         hotbarRect.x = round(screenWidth/2 - hotbarRect.width * 3);
         hotbarRect.y = 50;
 
-        item = player.hotbar.slotContents[player.hotbar.slot];
+        item = player.hotbar.contents[player.hotbar.slot];
 
         if item != "none":
             
@@ -1191,7 +1195,7 @@ def playerFrame () :
             selectedHotbarSize = 2;
 
             if hotbarSlot == player.hotbar.slot:
-                item = player.hotbar.slotContents[player.hotbar.slot];
+                item = player.hotbar.contents[player.hotbar.slot];
                 if item != "none":
                     player.hideArm = item.holdType;
                 else:
@@ -1213,7 +1217,7 @@ def playerFrame () :
                 hotbarRect.y += selectedHotbarSize; hotbarRect.height -= selectedHotbarSize * 2;
 
 
-            item = player.hotbar.slotContents[hotbarSlot];
+            item = player.hotbar.contents[hotbarSlot];
 
             if item != "none":
                 
@@ -1238,14 +1242,14 @@ def playerFrame () :
                 if item.itemType == "tool":
                     if item.breakType == "all" or "not wood": 
                         player.breakPower = item.breakPower;
-                        player.toolUseTime = item.useTime;
+                        player.timers["toolUseTime"] = item.useTime;
                     break;
-        for slot, item in player.hotbar.slotContents.items():
+        for slot, item in player.hotbar.contents.items():
             if item != "none":
                 if item.itemType == "tool":
                     if item.breakType == "all" or "not wood":
                         player.breakPower = item.breakPower;
-                        player.toolUseTime = item.useTime;
+                        player.timers["toolUseTime"] = item.useTime;
                     break;
 
 
@@ -1383,7 +1387,7 @@ def playerFrame () :
             if left: 
                 if player.xv > -player.maxXV: player.xv -= accel;
             
-            if keys[pygame.K_LCTRL] and player.state != "roll" and player.rollCD == 0:
+            if keys[pygame.K_LCTRL] and player.state != "roll" and player.timers["rollCD"] == 0:
 
                 player.state = "roll";
                 player.anim = "roll";
@@ -1414,7 +1418,7 @@ def playerFrame () :
                     player.fakeAngle += player.rollAngleSpeed * timeScale;
 
                 if abs(player.fakeAngle) >= 450:
-                    player.rollCD = FPS * 0.5;
+                    player.timers["rollCD"] = FPS * 0.5;
                     player.state = "idle";
                     if player.tiles.bottom:
                         player.anim = "idle";
@@ -1627,10 +1631,11 @@ def playerFrame () :
                     if left and up and grabby:
                         player.anim = "climb up";
                         player.state = "climb up";
+                
                         
 
                 if player.state == "climb up" and not player.tiles.top:
-                    if player.y > player.tilePos[1]:
+                    if player.timers["climb up"] == 0:
                         player.y -= 3;
                         if player.tiles.right:
                             player.angle -= 3;
@@ -1688,12 +1693,9 @@ def playerFrame () :
     playerDebug();
     
     def playerTimers():
-        if player.useTime > 0:
-            player.useTime -= 1;
-        if player.rollCD > 0:
-            player.rollCD -= 1;
-        if player.swingTime > 0:
-            player.swingTime -= 1;
+        for key, timer in player.timers.items():
+            if timer > 0:
+                timer -= 1;
     playerTimers();
     
     if player.hideArm == "both":
