@@ -227,7 +227,7 @@ def loadPlayerAnims():
     def addRoll():
          # both arms
         addAnim("roll", animPath + "roll.png", 15, 1);
-        addPositionFix("roll", (0, 0), (0, 0));
+        addPositionFix("roll", (0, -13), (0, -13));
 
     def addAnims():
         addRun();
@@ -836,6 +836,12 @@ class Player ():
             "doubleJump": False
         };
 
+        this.extraAbilityInfo = {
+            "wallclimb": {
+                "lastSide": "none"
+            }
+        }
+
         this.width = tileSize;
         this.height = tileSize * 2;
         this.flipH = False;
@@ -1309,6 +1315,7 @@ def playerFrame () :
             player.y = player.tilePos[1];
             player.airTime = 0;
             player.abilitesUsed["doubleJump"] = False;
+            player.extraAbilityInfo["wallclimb"]["lastSide"] = "none";
 
         elif not grapple.hooked:
             player.yv += gravity * timeScale;
@@ -1399,26 +1406,27 @@ def playerFrame () :
                 if player.xv > -player.maxXV: player.xv -= accel;
             
             if keys[pygame.K_LCTRL] and player.state != "roll" and player.timers["rollCD"] == 0:
+                if player.state != "wallclimb" and player.state != "climb up":
 
-                player.state = "roll";
-                player.anim = "roll";
-                player.fakeAngle = 0;
-                player.height = tileSize;
-                player.y += tileSize;
+                    player.state = "roll";
+                    player.anim = "roll";
+                    player.fakeAngle = 0;
+                    player.height = tileSize;
+                    player.y += tileSize;
 
-                if right:
-                    player.rollDir = "right";
-
-                if left:
-                    player.rollDir = "left";
-
-
-                if player.xv == 0:
-
-                    if player.flipH:
-                        player.rollDir = "left";
-                    else: 
+                    if right:
                         player.rollDir = "right";
+
+                    if left:
+                        player.rollDir = "left";
+
+
+                    if player.xv == 0:
+
+                        if player.flipH:
+                            player.rollDir = "left";
+                        else: 
+                            player.rollDir = "right";
 
 
             # roll
@@ -1430,7 +1438,7 @@ def playerFrame () :
                     player.xv = -player.maxXV;
                     player.fakeAngle += player.rollAngleSpeed * timeScale;
                 if abs(player.fakeAngle) >= 450:
-                    player.timers["rollCD"] = FPS * 0.5;
+                    player.timers["rollCD"] = 3;#FPS * 0.5;
                     if player.tiles.top:
                         player.state = "crouch";
                         player.anim = "crouch";
@@ -1485,24 +1493,45 @@ def playerFrame () :
                         player.anim = "walk";
                         player.state = player.anim;
             else:
-                if up:
+                if up and not player.tiles.top and player.state != "slide":
                     # wallclimb
                     if not player.abilitesUsed["wallclimb"] and player.yv < 10:
-                        if player.tiles.right or player.tiles.left:
+                        lastSide = player.extraAbilityInfo["wallclimb"]["lastSide"];
+                        def initWallclimb():
                             player.lockX = True;
+                            if player.state == "roll":
+                                player.y -= tileSize;
+                                player.height = tileSize * 2;
                             player.anim = "wallclimb";
                             player.state = "wallclimb";
                             player.abilitesUsed["wallclimb"] = True;
                             player.yv = player.jumpPower * 1.5;
-                # walljump
-                if player.tiles.right and space and left and player.xv > 0:
-                    player.yv = player.jumpPower;
-                    player.xv = player.jumpPower / 2;
-                if player.tiles.left and space and right and player.xv < 0:
-                    player.yv = player.jumpPower;
-                    player.xv = player.jumpPower / -2;
+                            
+                        
+                        if player.tiles.right and player.tiles.left:
+                            if lastSide != "both":
+                                player.extraAbilityInfo["wallclimb"]["lastSide"] = "both";
+                                initWallclimb();
+                        else:
+                            if player.tiles.left:
+                                if lastSide != "left":
+                                    player.extraAbilityInfo["wallclimb"]["lastSide"] = "left";
+                                    initWallclimb();
+                            
+                            if player.tiles.right:
+                                if lastSide != "right":
+                                    player.extraAbilityInfo["wallclimb"]["lastSide"] = "right";
+                                    initWallclimb();
+                # wall bounce
+                if not left and not right:
+                    if player.tiles.right and space and left and player.xv > 0:
+                        player.yv = player.jumpPower;
+                        player.xv = player.jumpPower / 2;
+                    if player.tiles.left and space and right and player.xv < 0:
+                        player.yv = player.jumpPower;
+                        player.xv = player.jumpPower / -2;
 
-        if down and player.state != "crouch" and player.state != "slide":
+        if down and player.state != "crouch" and player.state != "slide" and player.state != "roll":
             if player.tiles.bottom:
                 if abs(player.xv) > player.maxXV / 1.1:
                     if player.state != "slide":
@@ -1564,23 +1593,24 @@ def playerFrame () :
                     player.height = tileSize * 2;
                     player.y -= tileSize;
                 
-                player.xv = 0;
+                
                 player.anim = "crouch";
 
                 if left or right:
                     player.anim = "crouch walk";
 
                     if left:
-                        player.x -= 3 * timeScale;
-                        player.flipH = True;
-                        if player.tiles.left:
-                            player.x = player.tilePos[0];
+                        if abs(player.xv) < 3:
+                            player.xv -= player.accel / 5 * timeScale;
+                        else:
+                            player.xv = -3;
 
                     if right:
-                        player.x += 3 * timeScale;
-                        player.flipH = False;
-                        if player.tiles.right:
-                            player.x = player.tilePos[0];
+                        if abs(player.xv) < 3:
+                            player.xv += player.accel / 5 * timeScale;
+                        else:
+                            player.xv = 3;
+                        
 
                 if not player.tiles.top and not down:
                     uncrouch()        
@@ -1613,13 +1643,16 @@ def playerFrame () :
                 
                 
                 grabby = False;
+                climby = False;
                 
                 if player.tiles.right:
 
                     
                     if not getTile(player.x + tileSize, player.y) and not player.tiles.top:
                         grabby = True;
-
+                    
+                    if grabby and not getTile(player.x + tileSize, player.y - tileSize):
+                        climby = True;
                     pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv + tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
                     player.flipH = False;
                     
@@ -1631,7 +1664,7 @@ def playerFrame () :
 
                             if left: 
                                 player.anim = "wallhang (reach)";
-                            if right and up:
+                            if right and up and climby:
                                 initClimbUp();
 
 
@@ -1644,6 +1677,9 @@ def playerFrame () :
                     if not getTile(player.tilePos[0] - tileSize + player.xv, player.tilePos[1]) and not player.tiles.top:
                         grabby = True;
 
+                    if grabby and not getTile(player.tilePos[0] - tileSize + player.xv, player.tilePos[1] - tileSize):
+                        climby = True;
+                    
                     player.flipH = True;
                     
                     if grabby:
@@ -1654,7 +1690,7 @@ def playerFrame () :
 
                             if right:
                                 player.anim = "wallhang (reach)";
-                            if left and up:
+                            if left and up and climby:
                                 initClimbUp();
                     if space:
                         if right: jumpOff(3);
@@ -1667,7 +1703,7 @@ def playerFrame () :
                     else:
                         player.lockX = False;
 
-                if (not player.tiles.right and not player.tiles.left) or (player.tiles.bottom and player.state != "climb up"):
+                if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
                     #player.anim = "idle"; player.state = "idle";
@@ -1949,7 +1985,7 @@ def renderTiles (chunkPos) :
                         
         currentChunk += 1;
               
-                
+                    
                 
                 
 running = True;
