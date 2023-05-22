@@ -919,7 +919,7 @@ class Grapple () :
 
     def unhook (this):
         grapple.hooked = False;
-                        
+        player.angle = 0;
         player.yv = grapple.distanceX - grapple.distance * -grapple.angularVel;
         player.xv = grapple.distanceY - grapple.distance * -grapple.angularVel;
 
@@ -937,16 +937,25 @@ class Grapple () :
         grapple.fired = False;
         
         grapple.distance = math.dist((player.x, player.y), (grapple.x, grapple.y));
+        grapple.distanceX = math.cos(math.radians(grapple.angle));
+        grapple.distanceY = math.sin(math.radians(grapple.angle));
         #if grapple.distance > 300:
         #    grapple.inUse = False;
         dx = grapple.x - player.x;
         dy = grapple.y - player.y;
 
         grapple.angle = round(math.degrees(math.atan2(-dy, dx)));
-        otherNum = player.yv;
-        if player.xv < 0: otherNum *= -1;
-        grapple.angularVel = player.xv + otherNum;
-        grapple.angularVel /= 3;
+    
+
+        #player.yv = grapple.distanceX - grapple.distance * -grapple.angularVel;
+        #player.xv = grapple.distanceY - grapple.distance * -grapple.angularVel;
+        thing = grapple.distanceX - player.yv;
+        thing /= grapple.distance;
+        thing *= -1;
+
+        grapple.angularVel = thing;
+        #grapple.distanceX - player.yv = grapple.distance * -grapple.angularVel
+        #thing / grapple.distance = -grapple.angularVel
 
         player.xv = 0;
         player.yv = 0;
