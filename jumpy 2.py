@@ -1634,7 +1634,7 @@ def playerFrame () :
         
         def doWallclimb():
             if player.state == "wallclimb" or player.state == "climb up":
-                wallclimbSide = player.extraAbilityInfo["wallclimb"]["lastSide"];
+                #wallclimbSide = player.extraAbilityInfo["wallclimb"]["lastSide"];
                 def jumpOff(XV, YV = player.jumpPower):
                     player.lockX = False;
                     player.xv = XV;
@@ -1669,7 +1669,7 @@ def playerFrame () :
                     
                     if grabby and not getTile(player.x + tileSize, player.y - tileSize):
                         climby = True;
-                    pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv + tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
+                    
                     player.flipH = False;
                     
                     if grabby:
@@ -1689,7 +1689,7 @@ def playerFrame () :
                         
 
                 if player.tiles.left:
-                    pygame.draw.rect(screen, white, (player.tilePos[0] + player.xv - tileSize - camera.x, player.tilePos[1] - camera.y, tileSize, tileSize))
+                    
                     if not getTile(player.tilePos[0] - tileSize + player.xv, player.tilePos[1]) and not player.tiles.top:
                         grabby = True;
 
@@ -1718,6 +1718,8 @@ def playerFrame () :
                         player.y -= 3 * timeScale;
                     else:
                         player.lockX = False;
+                
+                """ welp, this didn't fix it...
                 endWallclimb = False
                 if wallclimbSide == "right":
                     if not player.tiles.right:
@@ -1728,11 +1730,11 @@ def playerFrame () :
                 elif wallclimbSide == "both":
                     if not player.tiles.right and not player.tiles.left:
                         endWallclimb = True;
-                
-                if endWallclimb or player.tiles.bottom:
+                """
+                if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
-                    #player.anim = "idle"; player.state = "idle";
+                    player.anim = "idle"; player.state = "idle";
                     player.angle = 0;
         doWallclimb();
 
