@@ -1355,6 +1355,7 @@ def playerFrame () :
                 player.x = player.tilePos[0];
                 grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
             def resetPosY(num = 0):
+                grapple.angularVel = 0;
                 player.y = player.tilePos[1] + num;
                 grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
 
