@@ -132,6 +132,11 @@ def loadPlayerAnims():
          # both arms
         addAnim("run", animPath + "run.png", 22, 1, scale = 0.28);
         addPositionFix("run", (0, 0), (0, 0));
+        addArmPos("run", [
+            (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0),
+            (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), (0, 0), 
+            (0, 0), (0, 0)
+        ])
          # no arms
         addAnim("run (no arms)", noArmPath + "run (no arms).png", 22, 1, scale = 0.28);
         addPositionFix("run (no arms)", (0, 0), (0, 0));
@@ -153,6 +158,7 @@ def loadPlayerAnims():
          # both arms
         addAnim("idle", animPath + "idle.png", 2, FPS*2);
         addPositionFix("idle", (0, 0), (0, 0));
+        addArmPos("idle", [(9, 19), (9, 20)])
          # no arms
         addAnim("idle (no arms)", noArmPath + "idle (no arms).png", 2, FPS*2);
          # no right arm
@@ -462,7 +468,11 @@ class tileItem ():
 
     def handRender(this):
         pos = (int(player.x - camera.x), int(player.y - camera.y));
-        screen.blit(this.icon, pos);
+
+        itemImage = this.icon.copy();
+        itemImage = pygame.transform.scale_by(itemImage, (tileSize / 3) * itemImage.get_width());
+
+        screen.blit(itemImage, pos);
 
 class toolItem ():
     def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool", itemType = "tool", holdType = "right"):
@@ -1915,7 +1925,7 @@ def playerFrame () :
         
 
         screen.blit(image, rect);
-        screen.blit(image, (0, 0));
+        screen.blit(image, (0, 300));
         
         if runAnims:
             updateAnimation();
@@ -2024,7 +2034,83 @@ def renderTiles (chunkPos) :
 running = True;
 setAnimTimer();
 def advanceFrame():
-    pass
+    global keys, runAnims, playerFrame, mouse, renderTiles, updateCamera, player, camera, timeScale;
+    timeScale = 0.1;
+    tempKeys = pygame.key.get_pressed();
+    for num in range(len(tempKeys)):
+        if not keys[num] and tempKeys[num]:
+            keysPressed[num] = True;
+            
+
+    keys = tempKeys;
+    if timeScale > 0:
+        screen.fill(skyblue);
+        
+        
+        
+        mousePos = pygame.mouse.get_pos();
+        mouse.absX, mouse.absY = mousePos[0], mousePos[1];
+        
+        mouse.x = mouse.absX + camera.x;
+        mouse.y = mouse.absY + camera.y;
+        mouse.pos = (mouse.x, mouse.y);
+        
+        cameraChunk = getChunkPos(camera.x, camera.y);
+        
+        renderTiles(cameraChunk);
+
+        playerFrame();
+        if len(groundItems) > 400:
+            groundItems.remove(0);
+        i = len(groundItems) - 1;
+        while i > -1:
+            item = groundItems[i];
+            groundItemsFrame(item);
+            i -= 1;
+        
+        
+        updateCamera();
+        
+        test = pygame.Rect(mouse.x-camera.x, mouse.y-camera.y, 5, 5);
+        pygame.draw.rect(screen, green, test);
+        
+        mouse.pressed = False;
+        runAnims = False;
+
+        for event in pygame.event.get():
+    
+            if event.type == pygame.QUIT:
+            
+                pygame.quit();
+                sys.exit();
+                
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                mouse.down = True;
+                mouse.button = event.button;
+                mouse.pressed = True;
+            if event.type == pygame.MOUSEBUTTONUP:
+                mouse.down = False;
+            if event.type == pygame.MOUSEWHEEL:
+                player.hotbar.slot -= event.y;
+                if player.hotbar.slot <= -1:
+                    player.hotbar.slot = 0;
+                if player.hotbar.slot >= 5:
+                    player.hotbar.slot = 4;
+
+            if event.type == animEventInt and timeScale > 0:
+                
+                runAnims = True;
+                pygame.time.set_timer(animEventInt, abs(int(1000 / FPS / timeScale) - 5));
+                
+        
+        for num in range(len(keysPressed)):
+            keysPressed[num] = False;
+        thing = player.image[player.anim]
+        if thing["armPos"][thing["currentFrame"]] == (0, 0):
+            pygame.draw.rect(screen, red, (300, 300, 30, 30));
+
+        pygame.display.flip();
+        timeScale = 0;
 
 while running: # game loop
     tempKeys = pygame.key.get_pressed();
@@ -2067,26 +2153,30 @@ while running: # game loop
         
         mouse.pressed = False;
         runAnims = False;
+        thing = player.image[player.anim]
+        if thing["armPos"][thing["currentFrame"]] == (0, 0):
+            pygame.draw.rect(screen, red, (300, 300, 30, 30));
     else:
-        if keys[pygame.K_RIGHT]: advanceFrame();
+        
+        if keys[pygame.K_p]: advanceFrame();
         if keys[pygame.K_l]: timeScale = 1.0; setAnimTimer();
-        if keys[pygame.K_m]:
+        if keysPressed[pygame.K_m]:
             mousePos = pygame.mouse.get_pos();
             mouse.absX, mouse.absY = mousePos[0], mousePos[1];
 
             img = player.image[player.anim]["image"];
             x = mouse.absX;
-            y = mouse.absY;
-            print(str(x) + ", " + str(y));
+            y = mouse.absY + 300;
+            print(str(x) + ", " + str(y - 300));
             
             print(player.image[player.anim]["currentFrame"]);
-            player.armPos = (x, y);
+            
             pos = [int(player.x - camera.x), int(player.y - camera.y)];
-            pos[0] += player.armPos[0];
-            pos[1] += player.armPos[1];
-            if player.image[player.anim]["armPos"] == (0, 0):
-                pygame.draw.rect(screen, red, (300, 300, 30, 30));
+            pos[0] += x;
+            pos[1] += y - 600;
+            
             pygame.draw.rect(screen, yellow, (pos[0], pos[1], 5, 5))
+            pygame.display.flip()
     for event in pygame.event.get():
     
         if event.type == pygame.QUIT:
