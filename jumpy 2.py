@@ -1634,7 +1634,7 @@ def playerFrame () :
         
         def doWallclimb():
             if player.state == "wallclimb" or player.state == "climb up":
-
+                wallclimbSide = player.extraAbilityInfo["wallclimb"]["lastSide"];
                 def jumpOff(XV, YV = player.jumpPower):
                     player.lockX = False;
                     player.xv = XV;
@@ -1718,8 +1718,18 @@ def playerFrame () :
                         player.y -= 3 * timeScale;
                     else:
                         player.lockX = False;
-
-                if (not player.tiles.right and not player.tiles.left) or player.tiles.bottom:
+                endWallclimb = False
+                if wallclimbSide == "right":
+                    if not player.tiles.right:
+                        endWallclimb = True;
+                elif wallclimbSide == "left":
+                    if not player.tiles.left:
+                        endWallclimb = True;
+                elif wallclimbSide == "both":
+                    if not player.tiles.right and not player.tiles.left:
+                        endWallclimb = True;
+                
+                if endWallclimb or player.tiles.bottom:
                     player.lockX = False;
                     player.abilitesUsed["wallclimb"] = False;
                     #player.anim = "idle"; player.state = "idle";
