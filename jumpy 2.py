@@ -459,9 +459,9 @@ class tileItem ():
                 tileOnBottom = getTile(mouse.x, mouse.y + tileSize);
                 allowPlace = False;
 
-                if tileOnLeft or tileOnRight or tileOnTop or tileOnBottom:
-                    allowPlace = True;
-
+                #if tileOnLeft or tileOnRight or tileOnTop or tileOnBottom:
+                #    allowPlace = True; DISABLED! (disables placing blocks in air)
+                allowPlace = True;
                 if allowPlace:
                     if tile["type"] == "air":
                         chunks[chunkPos][tilePos] = this.data;
@@ -949,11 +949,17 @@ class Grapple () :
 
         #player.yv = grapple.distanceX - grapple.distance * -grapple.angularVel;
         #player.xv = grapple.distanceY - grapple.distance * -grapple.angularVel;
-        thing = grapple.distanceX - player.yv;
-        thing /= grapple.distance;
-        thing *= -1;
+        vel = grapple.distanceX - player.yv;
+        vel /= grapple.distance;
+        vel *= -100;
 
-        grapple.angularVel = thing;
+        if player.xv > 0:
+            vel = abs(vel);
+        elif player.xv < 0:
+            vel = abs(vel) * -1;
+        
+        
+        grapple.angularVel = vel;
         #grapple.distanceX - player.yv = grapple.distance * -grapple.angularVel
         #thing / grapple.distance = -grapple.angularVel
 
@@ -1352,7 +1358,7 @@ def playerFrame () :
             
             if grapple.angle > 360: grapple.angle -= 360;
             if grapple.angle < 0: grapple.angle += 360;
-
+            
             if not getTile(grapple.x, grapple.y):
                 grapple.hooked = False;
             
