@@ -5,15 +5,9 @@ pygame.init();
 
 
 keys = pygame.key.get_pressed();
-keysPressed = {
-    "a": False,
-    "w": False,
-    "s": False,
-    "d": False,
-    "space": False,
-    "shift": False,
-    "ctrl": False
-};
+keysPressed = [];
+for num in range(len(keys)):
+    keysPressed.append(False);
 
 
 screenWidth, screenHeight = 1200, 800; # normally 600, 400
@@ -766,6 +760,7 @@ class Mouse:
         mouse.button = 1;
         mouse.pressed = False;
         mouse.pos = (0, 0);
+        mouse.heldItem = "none";
 
         mouse.offsetX = 0;
         mouse.offsetY = 0;
@@ -1242,19 +1237,20 @@ def playerFrame () :
                 hotbarColor = blue;
 
             pygame.draw.rect(screen, hotbarColor, hotbarRect);
-            
             if hotbarSlot == player.hotbar.slot:
-
                 hotbarRect.x += selectedHotbarSize; hotbarRect.width -= selectedHotbarSize * 2;
                 hotbarRect.y += selectedHotbarSize; hotbarRect.height -= selectedHotbarSize * 2;
-
 
             item = player.hotbar.contents[hotbarSlot];
 
             if item != "none":
                 
                 screen.blit(item.icon, hotbarRect);
-                
+            
+            if mouse.down and player.inventory["open"]:
+                if mouse.button == 1:
+                    pass;
+
             hotbarRect.x += hotbarRect.width + 3;
         
         for hotbarSlot in range(5):
@@ -1268,26 +1264,26 @@ def playerFrame () :
     hotbarStuff();
 
     def inventoryStuff():
+        
+        def findBreakPower():
+            for slot, item in player.inventory.items():
+                if item != "none" and slot != "open":
+                    if item.itemType == "tool":
+                        if item.breakType == "all" or "not wood": 
+                            player.breakPower = item.breakPower;
+                            player.timers["toolUseTime"] = item.useTime;
+                        break;
+            for slot, item in player.hotbar.contents.items():
+                if item != "none":
+                    if item.itemType == "tool":
+                        if item.breakType == "all" or "not wood":
+                            player.breakPower = item.breakPower;
+                            player.timers["toolUseTime"] = item.useTime;
+                        break;
+        findBreakPower();
 
-        for slot, item in player.inventory.items():
-            if item != "none" and slot != "open":
-                if item.itemType == "tool":
-                    if item.breakType == "all" or "not wood": 
-                        player.breakPower = item.breakPower;
-                        player.timers["toolUseTime"] = item.useTime;
-                    break;
-        for slot, item in player.hotbar.contents.items():
-            if item != "none":
-                if item.itemType == "tool":
-                    if item.breakType == "all" or "not wood":
-                        player.breakPower = item.breakPower;
-                        player.timers["toolUseTime"] = item.useTime;
-                    break;
-
-
-        if keys[pygame.K_e]:
-            if player.inventory["open"]: player.inventory["open"] = False;
-            else: player.inventory["open"] = True;
+        if keysPressed[pygame.K_e]:
+            player.inventory["open"] == True;
 
         if player.inventory["open"]:
             hotbarRect.x = screenWidth/2 - hotbarRect.width * 3;
@@ -1297,7 +1293,16 @@ def playerFrame () :
                     hotbarRect.y = screenHeight/2 - hotbarRect.height * 3;
                     hotbarRect.x += hotbarRect.width + 3;
                     for y in range(3):
-                        pygame.draw.rect(screen, blue, hotbarRect);
+                        color = blue;
+                        if hotbarRect.collidepoint(mouse.absX, mouse.absY):
+                            color = orange;
+                            if mouse.down:
+                                if mouse.button == 1:
+                                    pass;
+                        
+
+
+                        pygame.draw.rect(screen, color, hotbarRect);
 
                         hotbarRect.y += hotbarRect.height + 3;
             drawInventoryAndUpdate();
@@ -1306,7 +1311,7 @@ def playerFrame () :
 
             pass
                         
-        if keys[pygame.K_q]:
+        if keysPressed[pygame.K_q]:
                 if not grapple.hooked: grapple.fire();
                 else: grapple.unhook();
     inventoryStuff();
@@ -2018,16 +2023,17 @@ def renderTiles (chunkPos) :
                 
 running = True;
 setAnimTimer();
+def advanceFrame():
+    pass
+
 while running: # game loop
     tempKeys = pygame.key.get_pressed();
-    
-    up = pygame.K_w;
-    def doKeyPress(key, key2):
-        if not tempKeys[key] and not keysPressed[key2]:
-            keysPressed[key2] = True;
-    doKeyPress(up, "w");
+    for num in range(len(tempKeys)):
+        if not keys[num] and tempKeys[num]:
+            keysPressed[num] = True;
+            
 
-    keys = pygame.key.get_pressed();
+    keys = tempKeys;
     if timeScale > 0:
         screen.fill(skyblue);
         
@@ -2062,6 +2068,7 @@ while running: # game loop
         mouse.pressed = False;
         runAnims = False;
     else:
+        if keys[pygame.K_RIGHT]: advanceFrame();
         if keys[pygame.K_l]: timeScale = 1.0; setAnimTimer();
         if keys[pygame.K_m]:
             mousePos = pygame.mouse.get_pos();
@@ -2077,7 +2084,8 @@ while running: # game loop
             pos = [int(player.x - camera.x), int(player.y - camera.y)];
             pos[0] += player.armPos[0];
             pos[1] += player.armPos[1];
-           
+            if player.image[player.anim]["armPos"] == (0, 0):
+                pygame.draw.rect(screen, red, (300, 300, 30, 30));
             pygame.draw.rect(screen, yellow, (pos[0], pos[1], 5, 5))
     for event in pygame.event.get():
     
@@ -2105,9 +2113,8 @@ while running: # game loop
             pygame.time.set_timer(animEventInt, abs(int(1000 / FPS / timeScale) - 5));
             
     
-    for keyName, keyValue in keysPressed.items():
-        keysPressed[keyName] = False;
-        keyValue = False;
+    for num in range(len(keysPressed)):
+        keysPressed[num] = False;
     
                  
     
