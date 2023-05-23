@@ -256,7 +256,9 @@ def loadOtherImages():
     "air": 0,
     "grass": pygame.image.load(tilePath + "grass.png").convert_alpha(),
     "dirt": pygame.image.load(tilePath + "dirt.png").convert_alpha(),
-    "stone": pygame.image.load(tilePath + "stone.png").convert_alpha()
+    "stone": pygame.image.load(tilePath + "stone.png").convert_alpha(),
+    "log": pygame.image.load(tilePath + "log.png").convert_alpha(),
+    "leaf": pygame.image.load(tilePath + "leaf.png").convert_alpha()
 
     }
 
@@ -280,9 +282,51 @@ def loadOtherImages():
         image.fill(black, (0, 0, tileSize, tileSize), special_flags = pygame.BLEND_ADD);
 loadOtherImages();
 
+structures = {
+    "trees": [
+        [
+         "air", "air", "log", "air", "air",
+         "air", "air", "log", "air", "air",
+         "air", "leaf", "leaf", "leaf", "air",
+         "air", "leaf", "leaf", "leaf", "air",
+         "leaf", "leaf", "leaf", "leaf", "leaf",
+         "leaf", "leaf", "leaf", "leaf", "leaf"
+        ],
+         
+        [
+         "air", "air", "log", "air", "air",
+         "air", "air", "log", "air", "air",
+         "air", "air", "log", "air", "air",
+         "air", "leaf", "leaf", "leaf", "air",
+         "leaf", "leaf", "leaf", "leaf", "leaf",
+         "leaf", "leaf", "leaf", "leaf", "leaf",
+         "leaf", "leaf", "leaf", "leaf", "leaf",
+         "air", "leaf", "leaf", "leaf", "air"
+        ],
+        
+        [
+         "air", "log", "air",
+         "air", "log", "air",
+         "air", "log", "air",
+         "air", "log", "air",
+         "air", "log", "air"
+         "leaf", "leaf", "leaf",
+         "leaf", "leaf", "leaf",
+         "leaf", "leaf", "leaf",
+         "air", "leaf", "air"
+        ]
+    ],
+        
+}
+
 def generateChunk (chunkPos) :
 
     chunkData = {};
+    structureData = {};
+    makeTree = False;
+    treePos = "none";
+    def generateTree(treeType, treePos):
+        pass
     
     for x in range(chunkSize):
         for y in range(chunkSize):
@@ -295,6 +339,11 @@ def generateChunk (chunkPos) :
             
             tileType = "air";
             tileHardness = 0;
+
+            if tileY == chunkSize - 1:
+                if random.randint(0, 50) == 0:
+                    makeTree = True;
+                    treePos = (tileX, tileY);
 
             if tileY == chunkSize:
                 tileType = "grass";
@@ -316,10 +365,12 @@ def generateChunk (chunkPos) :
             };
             
             chunkData[(x, y)] = tileData;
-            
-            
-            
     
+    # trees test
+    if makeTree:
+        generateTree(random.randint(0, 2), treePos);
+
+
     chunks[chunkPos] = chunkData;
 
 
@@ -327,6 +378,9 @@ icons = {
     "grass": pygame.Surface.copy(tileImgs["grass"]),
     "dirt": pygame.Surface.copy(tileImgs["dirt"]),
     "stone": pygame.Surface.copy(tileImgs["stone"]),
+    "log": pygame.Surface.copy(tileImgs["log"]),
+    "leaf": pygame.Surface.copy(tileImgs["leaf"]),
+    
     "multitool": pygame.Surface.copy(toolImgs["multitool"]),
     "starter pick": pygame.Surface.copy(toolImgs["starter pick"]),
     "katana": pygame.Surface.copy(meleeImgs["katana"])
@@ -754,6 +808,8 @@ items = {
     "grass": tileItem({"type": "grass", "hardness": 3}),
     "dirt": tileItem({"type": "dirt", "hardness": 2}),
     "stone": tileItem({"type": "stone", "hardness": 6}),
+    "log": tileItem({"type": "log", "hardness": 5}),
+    "leaf": tileItem({"type": "leaf", "hardness": 1}),
     
     "multitool": toolItem("all", 0.5, 5, "multitool"),
     "epic sword": meleeItem(5, 2),
@@ -868,9 +924,9 @@ class Player ():
         
         this.hotbar = Hotbar();
 
-        this.hotbar.contents[3] = items["dirt"];
+        this.hotbar.contents[3] = items["log"];
         this.hotbar.contents[1] = items["starter pick"];
-        this.hotbar.contents[2] = items["stone"];
+        this.hotbar.contents[2] = items["leaf"];
         this.hotbar.contents[0] = items["epic sword"];
        
 
@@ -1392,12 +1448,12 @@ def playerFrame () :
             def resetPosX(num = 0):
                 grapple.angularVel = 0;
                 player.x = player.tilePos[0] + num;
-                grapple.angle = round(grapple.angle);
+                #grapple.angle = round(grapple.angle);
                 #grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
             def resetPosY(num = 0):
                 grapple.angularVel = 0;
                 player.y = player.tilePos[1] + num;
-                grapple.angle = round(grapple.angle);
+                #grapple.angle = round(grapple.angle);
                 #grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
 
             if player.tiles.right:
