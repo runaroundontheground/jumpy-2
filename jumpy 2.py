@@ -284,16 +284,18 @@ loadOtherImages();
 
 structures = {
     "trees": [
-        [
+        [[
          "air", "air", "log", "air", "air",
          "air", "air", "log", "air", "air",
          "leaf", "leaf", "leaf", "leaf", "leaf",
          "leaf", "leaf", "leaf", "leaf", "leaf",
          "air", "leaf", "leaf", "leaf", "air",
          "air", "leaf", "leaf", "leaf", "air"
+        ],
+        (5, 6) # tree width, tree height
         ],
          
-        [
+        [[
          "air", "air", "log", "air", "air",
          "air", "air", "log", "air", "air",
          "air", "air", "log", "air", "air",
@@ -303,8 +305,10 @@ structures = {
          "leaf", "leaf", "leaf", "leaf", "leaf",
          "air", "leaf", "leaf", "leaf", "air"
         ],
+        (5, 8) # tree width, tree height
+        ],
         
-        [
+        [[
          "air", "log", "air",
          "air", "log", "air",
          "air", "log", "air",
@@ -314,6 +318,8 @@ structures = {
          "leaf", "leaf", "leaf",
          "leaf", "leaf", "leaf",
          "air", "leaf", "air"
+        ],
+        (3, 9) # tree width, tree height
         ]
     ],
         
@@ -324,9 +330,46 @@ def generateChunk (chunkPos) :
     chunkData = {};
     structureData = {};
     makeTree = False;
-    treePos = "none";
+    treePos1 = "none";
+
     def generateTree(treeType, treePos):
-        pass
+        print("tree time!");
+        data = structures["trees"][treeType];
+        tree = data[0];
+        width = data[1][0];
+        height = data[1][1];
+        print(treePos)
+        treePos[0] -= math.ceil(width / 2) * tileSize;
+        treePos[1] += chunkSize * tileSize - tileSize;
+        print(treePos[0]);
+    
+        for x in range(width):
+            for y in range(height):
+                row = y * width;
+                index = x + row;
+                tileX = treePos[0] + (x * tileSize);
+                tileY = treePos[1] - (y * tileSize);
+                
+                chunkPos = getChunkPos(tileX, tileY);
+                tilePos = getTilePos(tileX, tileY, True);
+
+                hardness = 0;
+                if tree[index] == "log":
+                    hardness = 6
+                elif tree[index] == "leaf":
+                    hardness = 1;
+
+                tileData = {
+                    "type": tree[index],
+                    "hardness": hardness
+                }
+
+                try:
+                    chunks[chunkPos][tilePos];
+                except:
+                    print("tree generation failed!")
+                else:
+                    chunks[chunkPos][tilePos] = tileData;
     
     for x in range(chunkSize):
         for y in range(chunkSize):
@@ -340,10 +383,10 @@ def generateChunk (chunkPos) :
             tileType = "air";
             tileHardness = 0;
 
-            if tileY == chunkSize - 1:
-                if random.randint(0, 50) == 0:
+            if tileY == chunkSize - 1 and not makeTree: # check for trees
+                if random.randint(1, 5) == 1: # default is 1/50
                     makeTree = True;
-                    treePos = (tileX, tileY);
+                    treePos1 = [tileX, tileY];
 
             if tileY == chunkSize:
                 tileType = "grass";
@@ -365,14 +408,12 @@ def generateChunk (chunkPos) :
             };
             
             chunkData[(x, y)] = tileData;
-    
-    # trees test
-    if makeTree:
-        generateTree(random.randint(0, 2), treePos);
 
 
     chunks[chunkPos] = chunkData;
 
+    if makeTree:
+        generateTree(random.randint(0, 2), treePos1);
 
 icons = {
     "grass": pygame.Surface.copy(tileImgs["grass"]),
@@ -1762,7 +1803,7 @@ def playerFrame () :
 
                             if left: 
                                 player.anim = "wallhang (reach)";
-                            if right and up and climby:
+                            if right and keysPressed[pygame.K_w] and climby:
                                 initClimbUp();
 
 
@@ -1788,7 +1829,7 @@ def playerFrame () :
 
                             if right:
                                 player.anim = "wallhang (reach)";
-                            if left and up and climby:
+                            if left and keysPressed[pygame.K_w] and climby:
                                 initClimbUp();
                     if space:
                         if right: jumpOff(3);
