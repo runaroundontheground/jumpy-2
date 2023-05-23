@@ -1764,7 +1764,7 @@ def playerFrame () :
                     player.angle = 0;
         doWallclimb();
 
-    print(player.anim)
+    
     if player.anim != "climb up": unstuckPlayerX();
     
     def playerDebug () :
