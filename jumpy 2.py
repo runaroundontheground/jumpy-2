@@ -141,7 +141,7 @@ def loadPlayerAnims():
         addAnim("run (no arms)", noArmPath + "run (no arms).png", 22, 1, scale = 0.28);
         addPositionFix("run (no arms)", (0, 0), (0, 0));
          # no right arm
-        addAnim("run (no right arm)", noRightArmPath + "run (no right arm).png", 22, 1, False, 0.28);
+        addAnim("run (no right arm)", noRightArmPath + "run (no right arm).png", 22, 1, scale = 0.28);
         addPositionFix("run (no right arm)", (0, 0), (0, 0));
 
     def addWalk():
@@ -470,7 +470,9 @@ class tileItem ():
         pos = (int(player.x - camera.x), int(player.y - camera.y));
 
         itemImage = this.icon.copy();
-        itemImage = pygame.transform.scale_by(itemImage, (tileSize / 3) * itemImage.get_width());
+        scale = itemImage.get_width() / (tileSize / 8);
+        scale = (scale, scale);
+        itemImage = pygame.transform.scale(itemImage, scale)
 
         screen.blit(itemImage, pos);
 
@@ -1293,7 +1295,10 @@ def playerFrame () :
         findBreakPower();
 
         if keysPressed[pygame.K_e]:
-            player.inventory["open"] == True;
+            if player.inventory["open"]:
+                player.inventory["open"] = False;
+            else:
+                player.inventory["open"] = True;
 
         if player.inventory["open"]:
             hotbarRect.x = screenWidth/2 - hotbarRect.width * 3;
@@ -1350,6 +1355,10 @@ def playerFrame () :
         elif not grapple.hooked:
             player.yv += gravity * timeScale;
             player.airTime += timeScale;
+            if player.state != "climb up" and player.state != "wallclimb":
+                if player.anim != "jump" and player.state != "roll":
+                    if player.anim != "jump (no arms)" and player.anim != "jump (no right arm)":
+                        player.anim = "fall";
         
         if player.tiles.top:
             if player.yv < 0:
@@ -1380,20 +1389,22 @@ def playerFrame () :
 
             grapple.angularVel += gravity * grapple.distanceX * timeScale;
 
-            def resetPosX():
+            def resetPosX(num = 0):
                 grapple.angularVel = 0;
-                player.x = player.tilePos[0];
-                grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
+                player.x = player.tilePos[0] + num;
+                grapple.angle = round(grapple.angle);
+                #grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
             def resetPosY(num = 0):
                 grapple.angularVel = 0;
                 player.y = player.tilePos[1] + num;
-                grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
+                grapple.angle = round(grapple.angle);
+                #grapple.distance = round(math.dist((player.x, player.y), (grapple.x, grapple.y)));
 
-            if player.tiles.right and grapple.angularVel > 0:
-                resetPosX();
+            if player.tiles.right:
+                resetPosX(-1);
 
-            if player.tiles.left and grapple.angularVel < 0:
-                resetPosX();
+            if player.tiles.left:
+                resetPosX(1);
 
             if player.tiles.top:
                 resetPosY(tileSize + 1);
@@ -1403,9 +1414,9 @@ def playerFrame () :
             
             
             if up and grapple.distance > 3:
-                grapple.distance -= 8;
+                grapple.distance -= 8 * timeScale;
             if down and grapple.distance < 300:
-                grapple.distance += 8;
+                grapple.distance += 8 * timeScale;
 
             if space:
                 grapple.unhook();
@@ -1415,14 +1426,14 @@ def playerFrame () :
             
             if left:
                 if grapple.angle < 180:
-                    grapple.angularVel -= grapple.strength;
+                    grapple.angularVel -= grapple.strength * timeScale;
                 elif grapple.angle > 180:
-                    grapple.angularVel += grapple.strength;
+                    grapple.angularVel += grapple.strength * timeScale;
             if right:
                 if grapple.angle < 180:
-                    grapple.angularVel += grapple.strength;
+                    grapple.angularVel += grapple.strength * timeScale;
                 elif grapple.angle > 180:
-                    grapple.angularVel -= grapple.strength;
+                    grapple.angularVel -= grapple.strength * timeScale;
         
         
     if not grapple.hooked:
@@ -1753,7 +1764,7 @@ def playerFrame () :
                     player.angle = 0;
         doWallclimb();
 
-
+    print(player.anim)
     if player.anim != "climb up": unstuckPlayerX();
     
     def playerDebug () :
@@ -1806,6 +1817,7 @@ def playerFrame () :
             pass;
         else:
             player.anim += " (no arms)";
+           
     
     if player.hideArm == "right":
         try:
@@ -2113,13 +2125,17 @@ def advanceFrame():
         timeScale = 0;
 
 while running: # game loop
-    tempKeys = pygame.key.get_pressed();
-    for num in range(len(tempKeys)):
-        if not keys[num] and tempKeys[num]:
-            keysPressed[num] = True;
-            
 
+    tempKeys = pygame.key.get_pressed();
+
+    for num in range(len(tempKeys)):
+
+        if not keys[num] and tempKeys[num]:
+
+            keysPressed[num] = True;
+        
     keys = tempKeys;
+
     if timeScale > 0:
         screen.fill(skyblue);
         
