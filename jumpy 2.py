@@ -287,10 +287,10 @@ structures = {
         [
          "air", "air", "log", "air", "air",
          "air", "air", "log", "air", "air",
-         "air", "leaf", "leaf", "leaf", "air",
-         "air", "leaf", "leaf", "leaf", "air",
          "leaf", "leaf", "leaf", "leaf", "leaf",
-         "leaf", "leaf", "leaf", "leaf", "leaf"
+         "leaf", "leaf", "leaf", "leaf", "leaf",
+         "air", "leaf", "leaf", "leaf", "air",
+         "air", "leaf", "leaf", "leaf", "air"
         ],
          
         [
@@ -309,7 +309,7 @@ structures = {
          "air", "log", "air",
          "air", "log", "air",
          "air", "log", "air",
-         "air", "log", "air"
+         "air", "log", "air",
          "leaf", "leaf", "leaf",
          "leaf", "leaf", "leaf",
          "leaf", "leaf", "leaf",
