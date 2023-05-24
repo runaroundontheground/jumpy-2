@@ -333,15 +333,14 @@ def generateChunk (chunkPos) :
     treePos1 = "none";
 
     def generateTree(treeType, treePos):
-        print("tree time!");
+        
         data = structures["trees"][treeType];
         tree = data[0];
         width = data[1][0];
         height = data[1][1];
-        print(treePos)
+        
         treePos[0] -= math.ceil(width / 2) * tileSize;
-        treePos[1] += chunkSize * tileSize - tileSize;
-        print(treePos[0]);
+        
     
         for x in range(width):
             for y in range(height):
@@ -361,7 +360,8 @@ def generateChunk (chunkPos) :
 
                 tileData = {
                     "type": tree[index],
-                    "hardness": hardness
+                    "hardness": hardness,
+                    "collision": False
                 }
 
                 try:
@@ -382,29 +382,35 @@ def generateChunk (chunkPos) :
             
             tileType = "air";
             tileHardness = 0;
+            tileCollision = False;
 
             if tileY == chunkSize - 1 and not makeTree: # check for trees
                 if random.randint(1, 5) == 1: # default is 1/50
                     makeTree = True;
-                    treePos1 = [tileX, tileY];
+                    treePos1 = [tileX * tileSize, tileY * tileSize];
 
+            
             if tileY == chunkSize:
                 tileType = "grass";
                 tileHardness = 3;
+                tileCollision = True
             
             if tileY > chunkSize: 
                 tileType = "dirt";
-                tileHardness = 2; 
+                tileHardness = 2;
+                tileCollision = True;
             
             if tileY > chunkSize * 2:
                 if random.randint(1, int(100 / tileY) + 1) == 1:
                     tileType = "stone";
                     tileHardness = 6;
+                    tileCollision = True;
             
 
             tileData = {
                 "type": tileType, 
-                "hardness": tileHardness
+                "hardness": tileHardness,
+                "collision": tileCollision
             };
             
             chunkData[(x, y)] = tileData;
@@ -1202,7 +1208,10 @@ def getTile (x, y, otherInfo = False) :
     tile = chunks[chunkPos][(tileX, tileY)];
 
 
-    if tile["type"] == "air": data = False;
+    if tile["type"] == "air": 
+        data = False;
+    elif not tile["collision"]: 
+        data = False;
     else: data = True;
 
     if otherInfo: data = tile;
