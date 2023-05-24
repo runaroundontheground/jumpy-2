@@ -759,6 +759,13 @@ class toolItem ():
         screen.blit(newImage, rect);
         screen.blit(armImg, armRect);
 
+    def itemRender(this):
+        itemImage = pygame.Surface.copy(this.icon);
+
+        pos = (round(mouse.absX + tileSize / 3), round(mouse.absY + tileSize / 3));
+
+        screen.blit(itemImage, pos);
+
 class meleeItem ():
     def __init__(this, damage = 3, attackRange = 2, icon = "katana", imgPath = path + "animations/player/melee/katana (in hand).png", itemType = "melee",
             holdType = "both"):
@@ -854,7 +861,14 @@ class meleeItem ():
         
         
         screen.blit(newImage, rect);
-        
+
+    def itemRender(this):
+        itemImage = pygame.Surface.copy(this.icon);
+
+        pos = (round(mouse.absX + tileSize / 3), round(mouse.absY + tileSize / 3));
+
+        screen.blit(itemImage, pos);
+
 class rangedItem (): # NOT DONE! or even started
     def __init__(this, damage = 3):
         pass
@@ -1374,8 +1388,17 @@ def playerFrame () :
                 screen.blit(item.icon, hotbarRect);
             
             if mouse.down and player.inventory["open"]:
-                if mouse.button == 1:
-                    pass;
+                if mouse.button == 1 and mouse.pressed:
+                    if hotbarRect.collidepoint(mouse.absX, mouse.absY):
+                        item = player.hotbar.contents[hotbarSlot];
+
+                        if mouse.heldItem == "none" and item != "none":
+                            mouse.heldItem = item;
+                            player.hotbar.contents[hotbarSlot] = "none";
+                        elif mouse.heldItem != "none" and item == "none":
+                            player.hotbar.contents[hotbarSlot] = mouse.heldItem;
+                            mouse.heldItem = "none";
+                    
 
             hotbarRect.x += hotbarRect.width + 3;
         
@@ -1418,19 +1441,26 @@ def playerFrame () :
 
         if player.inventory["open"]:
             hotbarRect.x = screenWidth/2 - hotbarRect.width * 3;
-            if mouse.heldItem != "none":
-                mouse.heldItem.itemRender();
 
             def drawInventoryAndUpdate(): # also run item transfer w/ mouse
                 inventorySlot = -1;
                 for x in range(3):
                     hotbarRect.y = screenHeight/2 - hotbarRect.height * 3;
                     hotbarRect.x += hotbarRect.width + 3;
+                    
                     for y in range(3):
                         inventorySlot += 1;
                         color = blue;
-                        
+                        doSlot = False;
+
                         if hotbarRect.collidepoint(mouse.absX, mouse.absY):
+                            doSlot = True;
+                            color = orange;
+
+                        pygame.draw.rect(screen, color, hotbarRect);
+                        
+
+                        if doSlot:
                             color = orange;
                             if mouse.pressed:
                                 if mouse.button == 1:
@@ -1451,10 +1481,11 @@ def playerFrame () :
                             pos = (hotbarRect.x, hotbarRect.y);
                             
                             screen.blit(item.icon, pos);
-                        pygame.draw.rect(screen, color, hotbarRect);
+                        
                         hotbarRect.y += hotbarRect.height + 3;
 
-                        
+                if mouse.heldItem != "none":
+                    mouse.heldItem.itemRender();
             drawInventoryAndUpdate();
                         
         if keysPressed[pygame.K_q]:
