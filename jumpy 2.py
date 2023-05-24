@@ -1442,7 +1442,7 @@ def playerFrame () :
                                         player.inventory[inventorySlot] = mouse.heldItem;
                                         mouse.heldItem = "none";
                                         
-                        pygame.draw.rect(screen, color, hotbarRect);
+                        
                         
                         
                         if player.inventory[inventorySlot] != "none":
@@ -1451,7 +1451,7 @@ def playerFrame () :
                             pos = (hotbarRect.x, hotbarRect.y);
                             
                             screen.blit(item.icon, pos);
-            
+                        pygame.draw.rect(screen, color, hotbarRect);
                         hotbarRect.y += hotbarRect.height + 3;
 
                         
