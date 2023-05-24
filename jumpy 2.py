@@ -577,6 +577,14 @@ class tileItem ():
 
         screen.blit(itemImage, pos);
 
+    def itemRender(this):
+        itemImage = pygame.Surface.copy(this.icon);
+        itemImage = pygame.transform.scale_by(itemImage, 0.5);
+
+        pos = (round(mouse.absX + tileSize / 3), round(mouse.absY + tileSize / 3));
+
+        screen.blit(itemImage, pos);
+
 class toolItem ():
     def __init__(this, breakType = "all", breakPower = 0.5, useTime = 5, icon = "multitool", itemType = "tool", holdType = "right"):
 
@@ -990,7 +998,7 @@ class Player ():
             8: "none",
             "open": False
         }
-
+        this.inventory[0] = items["log"];
         this.timers = {
             "useTime": 0,
             "swingTime": 0,
@@ -1403,34 +1411,51 @@ def playerFrame () :
         if keysPressed[pygame.K_e]:
             if player.inventory["open"]:
                 player.inventory["open"] = False;
+                if mouse.heldItem != "none":
+                    pass # do some check to put it back
             else:
                 player.inventory["open"] = True;
 
         if player.inventory["open"]:
             hotbarRect.x = screenWidth/2 - hotbarRect.width * 3;
+            if mouse.heldItem != "none":
+                mouse.heldItem.itemRender();
 
-            def drawInventoryAndUpdate():
+            def drawInventoryAndUpdate(): # also run item transfer w/ mouse
+                inventorySlot = -1;
                 for x in range(3):
                     hotbarRect.y = screenHeight/2 - hotbarRect.height * 3;
                     hotbarRect.x += hotbarRect.width + 3;
                     for y in range(3):
+                        inventorySlot += 1;
                         color = blue;
+                        
                         if hotbarRect.collidepoint(mouse.absX, mouse.absY):
                             color = orange;
-                            if mouse.down:
+                            if mouse.pressed:
                                 if mouse.button == 1:
-                                    pass;
-                        
-
-
+                                    if mouse.heldItem == "none" and player.inventory[inventorySlot] != "none":
+                                        mouse.heldItem = player.inventory[inventorySlot];
+                                        player.inventory[inventorySlot] = "none";
+                                    
+                                    elif mouse.heldItem != "none" and player.inventory[inventorySlot] == "none":
+                                        player.inventory[inventorySlot] = mouse.heldItem;
+                                        mouse.heldItem = "none";
+                                        
                         pygame.draw.rect(screen, color, hotbarRect);
-
+                        
+                        
+                        if player.inventory[inventorySlot] != "none":
+                            item = player.inventory[inventorySlot];
+                            
+                            pos = (hotbarRect.x, hotbarRect.y);
+                            
+                            screen.blit(item.icon, pos);
+            
                         hotbarRect.y += hotbarRect.height + 3;
-            drawInventoryAndUpdate();
-        
-        if mouse.down:
 
-            pass
+                        
+            drawInventoryAndUpdate();
                         
         if keysPressed[pygame.K_q]:
                 if not grapple.hooked: grapple.fire();
