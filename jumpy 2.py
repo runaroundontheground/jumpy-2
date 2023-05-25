@@ -385,7 +385,7 @@ def generateChunk (chunkPos) :
             tileCollision = False;
 
             if tileY == chunkSize - 1 and not makeTree: # check for trees
-                if random.randint(1, 5) == 1: # default is 1/50
+                if random.randint(1, 50) == 1: # default is 1/50
                     makeTree = True;
                     treePos1 = [tileX * tileSize, tileY * tileSize];
 
@@ -504,12 +504,13 @@ def changeAngleSmoothly(currentAngle, desiredAngle, smoothness = 10):
     return currentAngle;
 
 class tileItem ():
-    def __init__(this, data = {"type": "grass", "hardness": 3}, itemType = "tile", holdType = "right"):
+    def __init__(this, data = {"type": "grass", "hardness": 3, "collision": True}, itemType = "tile", holdType = "right"):
         this.data = data;
         this.icon = icons[this.data["type"]];
         this.itemType = itemType;
         this.useTime = 2;
         this.holdType = holdType;
+        this.count = 1;
 
     def use(this):
             testChunk((mouse.x, mouse.y));
@@ -540,7 +541,7 @@ class tileItem ():
                     player.timers["useTime"] = player.timers["toolUseTime"];
 
                     if tile["type"] == "grass":
-                        chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                        chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2, "collision": True};
                     
                     if player.breakProgress >= tile["hardness"]:
                         spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
@@ -566,6 +567,7 @@ class tileItem ():
                 if allowPlace:
                     if tile["type"] == "air":
                         chunks[chunkPos][tilePos] = this.data;
+                        this.count -= 1;
 
     def handRender(this):
         pos = (int(player.x - camera.x), int(player.y - camera.y));
@@ -599,17 +601,15 @@ class toolItem ():
         this.rotateDir = "right";
         this.range = 5*tileSize;
 
+    def renderToolRange(this):
+        pos = (int(player.x + player.width / 2 - camera.x), int(player.y + player.height / 2 - camera.y));
+        color = (0, 0, 0, 100);
+        pygame.draw.circle(screen, color, pos, this.range, 1);
+
     def use(this):
-        # so here's how we fix:
-        """
-        make a new transparent surface
-        blit arm and item onto it
-        rotate
-        render
-        yay
-        """
+
         def swing():
-            
+            this.renderToolRange();
             
             
 
@@ -672,7 +672,7 @@ class toolItem ():
                 x = otherTilePos[0];
                 y = otherTilePos[1];
 
-                if math.dist((player.x, player.y), (mouse.x, mouse.y)) < this.range:
+                if math.dist((player.x + player.width/2, player.y + player.height/2), (mouse.x, mouse.y)) < this.range:
                     
                 
                     totalBreakProgress = player.breakProgress / tile["hardness"];
@@ -690,7 +690,7 @@ class toolItem ():
                         
 
                         if tile["type"] == "grass":
-                            chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2};
+                            chunks[chunkPos][tilePos] = {"type": "dirt", "hardness": 2, "collision": True};
                         
                         if player.breakProgress >= tile["hardness"]:
                             spawnItem(xv = random.randint(-5, 5), yv = random.randint(-5, 5), x = otherTilePos[0], y = otherTilePos[1], id = tile["type"]);
@@ -701,6 +701,8 @@ class toolItem ():
                 player.timers["useTime"] = int(this.useTime / timeScale);
 
     def handRender(this):
+
+        this.renderToolRange();
 
         newImage = pygame.Surface.copy(this.icon);
 
@@ -874,11 +876,11 @@ class rangedItem (): # NOT DONE! or even started
         pass
 
 items = {
-    "grass": tileItem({"type": "grass", "hardness": 3}),
-    "dirt": tileItem({"type": "dirt", "hardness": 2}),
-    "stone": tileItem({"type": "stone", "hardness": 6}),
-    "log": tileItem({"type": "log", "hardness": 5}),
-    "leaf": tileItem({"type": "leaf", "hardness": 1}),
+    "grass": tileItem({"type": "grass", "hardness": 3, "collision": True}),
+    "dirt": tileItem({"type": "dirt", "hardness": 2, "collision": True}),
+    "stone": tileItem({"type": "stone", "hardness": 6, "collision": True}),
+    "log": tileItem({"type": "log", "hardness": 5, "collision": True}),
+    "leaf": tileItem({"type": "leaf", "hardness": 1, "collision": True}),
     
     "multitool": toolItem("all", 0.5, 5, "multitool"),
     "epic sword": meleeItem(5, 2),
@@ -997,7 +999,8 @@ class Player ():
         this.hotbar.contents[1] = items["starter pick"];
         this.hotbar.contents[2] = items["leaf"];
         this.hotbar.contents[0] = items["epic sword"];
-       
+        this.hotbar.contents[4] = items["stone"];
+
 
         this.hotbar.slot = 0;
         this.inventory = {
@@ -1024,8 +1027,6 @@ class Player ():
         this.breakingTilePos = 0; # will be "getTile" later
         this.breakPower = 0;
         this.breakProgress = 0;
-        
-
 
 class Grapple () :
     def __init__(this):
@@ -1350,7 +1351,9 @@ def playerFrame () :
         item = player.hotbar.contents[player.hotbar.slot];
 
         if item != "none":
-            
+            if item.itemType == "tile":
+                if item.count <= 0:
+                    player.hotbar.contents[player.hotbar.slot] = "none";
             if mouse.down and mouse.button == 1:
                 item.use();
             else:
@@ -1391,13 +1394,9 @@ def playerFrame () :
                 if mouse.button == 1 and mouse.pressed:
                     if hotbarRect.collidepoint(mouse.absX, mouse.absY):
                         item = player.hotbar.contents[hotbarSlot];
-
-                        if mouse.heldItem == "none" and item != "none":
-                            mouse.heldItem = item;
-                            player.hotbar.contents[hotbarSlot] = "none";
-                        elif mouse.heldItem != "none" and item == "none":
-                            player.hotbar.contents[hotbarSlot] = mouse.heldItem;
-                            mouse.heldItem = "none";
+                        mouseItem = mouse.heldItem;
+                        mouse.heldItem = item;
+                        player.hotbar.contents[hotbarSlot] = mouseItem;
                     
 
             hotbarRect.x += hotbarRect.width + 3;
@@ -1464,13 +1463,10 @@ def playerFrame () :
                             color = orange;
                             if mouse.pressed:
                                 if mouse.button == 1:
-                                    if mouse.heldItem == "none" and player.inventory[inventorySlot] != "none":
-                                        mouse.heldItem = player.inventory[inventorySlot];
-                                        player.inventory[inventorySlot] = "none";
-                                    
-                                    elif mouse.heldItem != "none" and player.inventory[inventorySlot] == "none":
-                                        player.inventory[inventorySlot] = mouse.heldItem;
-                                        mouse.heldItem = "none";
+                                    mouseItem = mouse.heldItem;
+                                    inventoryItem = player.inventory[inventorySlot];
+                                    mouse.heldItem = inventoryItem;
+                                    player.inventory[inventorySlot] = mouseItem;
                                         
                         
                         
@@ -2140,8 +2136,15 @@ def groundItemsFrame(this):
         this.y -= speed;
 
 
-    if this.rect.colliderect(player.rect): 
+    if this.rect.colliderect(player.rect):
+        def addItem():
+            for key, item in player.inventory.items():
+                if key != "open":
+                    if item.itemType == "tile":
+                        if this == item:
+                            print("test");
         groundItems.remove(this);
+
 
 
     coord = (round(this.x - camera.x), round(this.y - camera.y));
