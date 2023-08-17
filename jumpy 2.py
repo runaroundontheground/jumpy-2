@@ -1,6 +1,5 @@
 import pygame, math, sys, random, os, json;
 
-
 pygame.init();
 
 
