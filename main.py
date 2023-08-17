@@ -9,7 +9,7 @@ for num in range(len(keys)):
     keysPressed.append(False);
 
 
-screenWidth, screenHeight = 1200, 800; # normally 600, 400
+screenWidth, screenHeight = 600, 400; # normally 600, 400
 
 tileSize = 30;
 chunks = {};
